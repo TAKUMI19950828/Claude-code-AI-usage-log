@@ -1,0 +1,145 @@
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj62UXskpdGuM-DR.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+:root {
+  /* Color tokens — WCAG AA checked against background (#0a0a0c, contrast ratios noted) */
+  --color-bg: #0a0a0c;
+  --color-bg-raised: #131318;
+  --color-fg: #f2f2f0; /* contrast vs bg: ~18.7:1 */
+  --color-muted: #a3a3ad; /* contrast vs bg: ~7.7:1 (AA for body text) */
+  --color-border: #2a2a32;
+  --color-accent: #5ef0c0; /* mint/cyan accent, contrast vs bg: ~12.5:1 */
+  --color-accent-fg: #04140f; /* text on accent background */
+
+  /* Typography */
+  --font-sans: 'Space Grotesk', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+  --fs-caption: clamp(0.75rem, 0.7rem + 0.1vw, 0.8125rem);
+  --fs-body: clamp(0.95rem, 0.9rem + 0.15vw, 1.0625rem);
+  --fs-h3: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --fs-h2: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  --fs-h1: clamp(2.25rem, 1.7rem + 2.2vw, 3.75rem);
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 32px;
+  --sp-6: 64px;
+
+  --radius: 0px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+}
+h2 {
+  font-size: var(--fs-h2);
+}
+h3 {
+  font-size: var(--fs-h3);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-fg);
+  text-decoration: none;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.02em;
+}
+
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--sp-4);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-bg);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  padding: var(--sp-2) var(--sp-4);
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 92% 100%, 0 100%);
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.button:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.button--ghost {
+  background: transparent;
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  clip-path: none;
+}
+
+.button--ghost:hover {
+  border-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

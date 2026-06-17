@@ -1,0 +1,86 @@
+---
+interface Props {
+  categories: string[];
+  tools: string[];
+}
+
+const { categories, tools } = Astro.props;
+---
+
+<div class="tag-filter">
+  <div class="tag-filter__group" role="group" aria-label="カテゴリで絞り込む">
+    <span class="mono tag-filter__label">CATEGORY</span>
+    {categories.map((category) => (
+      <button
+        type="button"
+        class="tag-filter__btn mono"
+        data-filter-group="category"
+        data-filter-value={category}
+        aria-pressed="false"
+      >
+        {category}
+      </button>
+    ))}
+  </div>
+  <div class="tag-filter__group" role="group" aria-label="ツールで絞り込む">
+    <span class="mono tag-filter__label">TOOL</span>
+    {tools.map((tool) => (
+      <button
+        type="button"
+        class="tag-filter__btn mono"
+        data-filter-group="tool"
+        data-filter-value={tool}
+        aria-pressed="false"
+      >
+        {tool}
+      </button>
+    ))}
+  </div>
+  <p class="mono tag-filter__status" id="filter-status" role="status" aria-live="polite"></p>
+</div>
+
+<style>
+  .tag-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-5);
+  }
+
+  .tag-filter__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .tag-filter__label {
+    color: var(--color-muted);
+    margin-right: var(--sp-2);
+  }
+
+  .tag-filter__btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-muted);
+    padding: var(--sp-1) var(--sp-3);
+    font-size: var(--fs-caption);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .tag-filter__btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-fg);
+  }
+
+  .tag-filter__btn[aria-pressed='true'] {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .tag-filter__status {
+    color: var(--color-muted);
+  }
+</style>
