@@ -43,4 +43,4 @@ src/
 
 GitHub上でのリポジトリ設定として、**Settings → Pages → Source を「GitHub Actions」に変更してください**（初回のみ必要）。
 
-公開URL: `https://takumi19950828.github.io/ai-usage-log/`
+公開URL: `https://takumi19950828.github.io/Claude-code-AI-usage-log/`
