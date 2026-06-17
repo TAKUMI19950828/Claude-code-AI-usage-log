@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="404 Not Found">
+  <div class="container not-found">
+    <p class="mono not-found__code">404</p>
+    <h1>ヘージが見つかりませんでした</h1>
+    <p class="not-found__lead">お探しのヘージは存在しないか、移動した可能性があります。</p>
+    <a href={base} class="button">Homeへ戻る</a>
+  </div>
+</Layout>
+
+<style>
+  .not-found {
+    padding: var(--sp-6) var(--sp-4);
+    text-align: center;
+  }
+
+  .not-found__code {
+    color: var(--color-accent);
+    font-size: var(--fs-h1);
+    margin-bottom: var(--sp-2);
+  }
+
+  .not-found__lead {
+    color: var(--color-muted);
+    margin: var(--sp-3) 0 var(--sp-5);
+  }
+</style>

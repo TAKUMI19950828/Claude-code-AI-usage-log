@@ -1,0 +1,74 @@
+---
+const base = import.meta.env.BASE_URL;
+const navItems = [
+  { label: 'Home', href: base },
+  { label: 'Cases', href: `${base}cases/` },
+  { label: 'About', href: `${base}about/` },
+];
+const currentPath = new URL(Astro.request.url).pathname;
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href={base} class="site-header__logo mono">AI_USAGE_LOG</a>
+    <nav aria-label="メインナビガッション">
+      <ul class="site-header__nav">
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="site-header__link mono"
+                aria-current={currentPath === item.href ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--sp-3) 0;
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+  }
+
+  .site-header__logo {
+    color: var(--color-fg);
+    font-weight: 700;
+    font-size: var(--fs-body);
+    letter-spacing: 0.04em;
+  }
+
+  .site-header__nav {
+    display: flex;
+    list-style: none;
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-header__link {
+    color: var(--color-muted);
+    padding-bottom: var(--sp-1);
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .site-header__link:hover,
+  .site-header__link[aria-current='page'] {
+    color: var(--color-fg);
+    border-bottom-color: var(--color-accent);
+  }
+</style>

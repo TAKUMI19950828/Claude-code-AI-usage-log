@@ -1,0 +1,40 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <p class="mono site-footer__text">&copy; {year} AI Usage Log</p>
+    <a href="https://github.com/takumi19950828" class="mono site-footer__link" target="_blank" rel="noopener noreferrer">
+      GitHub
+    </a>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--sp-6);
+    padding: var(--sp-4) 0;
+  }
+
+  .site-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+  }
+
+  .site-footer__text {
+    color: var(--color-muted);
+  }
+
+  .site-footer__link {
+    color: var(--color-muted);
+    transition: color 0.15s ease;
+  }
+
+  .site-footer__link:hover {
+    color: var(--color-accent);
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { TOOLS, CATEGORIES } from '../content.config';
+---
+
+<Layout title="About" description="このサイトについて、用語の凡例。">
+  <div class="container about">
+    <h1>About</h1>
+    <p class="about__lead">
+      このサイトは、日々の開発・作業でAIツールをどう使ったかを記録するための個人サイトです。
+      自分の活用パターンを振り返るログとして使いつつ、同じようにAIをもっと活用したい人の参考になればと公開しています。
+    </p>
+
+    <section class="about__section">
+      <h2 class="mono about__heading">CATEGORY とは</h2>
+      <p>各事例を、どんな目的でAIを使ったかで分類したものです。</p>
+      <ul class="about__list mono">
+        {CATEGORIES.map((category) => <li>{category}</li>)}
+      </ul>
+    </section>
+
+    <section class="about__section">
+      <h2 class="mono about__heading">TOOL とは</h2>
+      <p>各事例で実際に使用したAIツールです。</p>
+      <ul class="about__list mono">
+        {TOOLS.map((tool) => <li>{tool}</li>)}
+      </ul>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .about {
+    padding: var(--sp-6) var(--sp-4);
+    max-width: 640px;
+  }
+
+  .about__lead {
+    color: var(--color-muted);
+    margin-top: var(--sp-3);
+    margin-bottom: var(--sp-5);
+  }
+
+  .about__section {
+    margin-bottom: var(--sp-5);
+  }
+
+  .about__heading {
+    color: var(--color-accent);
+    margin-bottom: var(--sp-2);
+  }
+
+  .about__list {
+    list-style: none;
+    padding: 0;
+    margin: var(--sp-2) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    color: var(--color-muted);
+  }
+
+  .about__list li {
+    border: 1px solid var(--color-border);
+    padding: 2px var(--sp-2);
+  }
+</style>

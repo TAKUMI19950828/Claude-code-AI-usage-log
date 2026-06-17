@@ -1,0 +1,65 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CaseCard from '../components/CaseCard.astro';
+import { getPublishedCases } from '../lib/cases';
+
+const cases = await getPublishedCases();
+const featured = cases.filter((c) => c.data.featured);
+const pickups = (featured.length > 0 ? featured : cases).slice(0, 3);
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="AI Usage Log">
+  <section class="container hero">
+    <p class="mono hero__tag">PERSONAL AI USAGE RECORD</p>
+    <h1 class="hero__title">AIをどう使ったか、<br />事例として記録する。</h1>
+    <p class="hero__lead">
+      Claude Code・ChatGPTなどのAIツールを実際の開発・作業に使った事例を、自分用のログとして残しつつ、
+      同じようにAIを活用したい人へ向けて公開しています。
+    </p>
+    <a href={`${base}cases/`} class="button">View Cases</a>
+  </section>
+
+  <section class="container pickups">
+    <h2 class="mono pickups__label">FEATURED</h2>
+    <div class="pickups__grid">
+      {pickups.map((entry) => <CaseCard entry={entry} />)}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .hero {
+    padding: var(--sp-6) var(--sp-4) var(--sp-5);
+  }
+
+  .hero__tag {
+    color: var(--color-accent);
+    margin-bottom: var(--sp-3);
+  }
+
+  .hero__title {
+    margin-bottom: var(--sp-4);
+  }
+
+  .hero__lead {
+    color: var(--color-muted);
+    max-width: 560px;
+    margin-bottom: var(--sp-5);
+  }
+
+  .pickups {
+    padding: 0 var(--sp-4) var(--sp-6);
+  }
+
+  .pickups__label {
+    color: var(--color-muted);
+    margin-bottom: var(--sp-3);
+  }
+
+  .pickups__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-4);
+  }
+</style>

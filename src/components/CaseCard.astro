@@ -1,0 +1,89 @@
+---
+import { Image } from 'astro:assets';
+import Badge from './Badge.astro';
+import { formatDate, type CaseEntry } from '../lib/cases';
+
+interface Props {
+  entry: CaseEntry;
+}
+
+const { entry } = Astro.props;
+const { title, date, tools, category, summary, coverImage, coverImageAlt } = entry.data;
+const href = `${import.meta.env.BASE_URL}cases/${entry.id}/`;
+---
+
+<article class="case-card" data-category={category} data-tools={tools.join(',')}>
+  <a href={href} class="case-card__link" aria-label={`${title} の詳細を見る`}>
+    {
+      coverImage && (
+        <Image src={coverImage} alt={coverImageAlt ?? ''} class="case-card__image" width={400} height={225} />
+      )
+    }
+    <div class="case-card__body">
+      <p class="mono case-card__meta">
+        <time datetime={date}>{formatDate(date)}</time>
+      </p>
+      <h3 class="case-card__title">{title}</h3>
+      <p class="case-card__summary">{summary}</p>
+      <div class="case-card__tags">
+        <Badge label={category} variant="accent" />
+        {tools.map((tool) => <Badge label={tool} />)}
+      </div>
+    </div>
+  </a>
+</article>
+
+<style>
+  .case-card {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-raised);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .case-card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+  }
+
+  .case-card__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .case-card__image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .case-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+    flex: 1;
+  }
+
+  .case-card__meta {
+    color: var(--color-muted);
+  }
+
+  .case-card__title {
+    font-size: var(--fs-h3);
+  }
+
+  .case-card__summary {
+    color: var(--color-muted);
+    flex: 1;
+  }
+
+  .case-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+    margin-top: var(--sp-2);
+  }
+</style>

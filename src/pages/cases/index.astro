@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CaseCard from '../../components/CaseCard.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import { getPublishedCases } from '../../lib/cases';
+
+const cases = await getPublishedCases();
+const categories = [...new Set(cases.map((c) => c.data.category))];
+const tools = [...new Set(cases.flatMap((c) => c.data.tools))];
+---
+
+<Layout title="Cases" description="Claude CodeやChatGPTなど、AIツールを実際に使った事例カタログ。">
+  <div class="container cases-page">
+    <header class="cases-page__header">
+      <h1>Cases</h1>
+      <p class="cases-page__lead">
+        AIツールを実際の開発・作業で使った事例を記録しています。カテゴリやツールで絞り込んで探せます。
+      </p>
+    </header>
+
+    <TagFilter categories={categories} tools={tools} />
+
+    <p class="cases-page__empty mono" id="empty-state" hidden>該当する事例がありません。</p>
+
+    <div class="cases-page__grid" id="case-grid">
+      {cases.map((entry) => <CaseCard entry={entry} />)}
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const grid = document.getElementById('case-grid');
+  const emptyState = document.getElementById('empty-state');
+  const status = document.getElementById('filter-status');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.case-card'));
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.tag-filter__btn'));
+
+  // 選択状態: グループ(category/tool)ごとに選択値のSetを保持。グループ間は AND、グループ内は OR。
+  const selected: Record<string, Set<string>> = { category: new Set(), tool: new Set() };
+
+  function applyFilters() {
+    let visibleCount = 0;
+
+    for (const card of cards) {
+      const cardCategory = card.dataset.category ?? '';
+      const cardTools = (card.dataset.tools ?? '').split(',');
+
+      const categoryMatch = selected.category.size === 0 || selected.category.has(cardCategory);
+      const toolMatch = selected.tool.size === 0 || cardTools.some((tool) => selected.tool.has(tool));
+
+      const visible = categoryMatch && toolMatch;
+      card.hidden = !visible;
+      if (visible) visibleCount += 1;
+    }
+
+    if (grid) grid.hidden = visibleCount === 0;
+    if (emptyState) emptyState.hidden = visibleCount !== 0;
+    if (status) status.textContent = `${visibleCount}件の事例を表示中`;
+  }
+
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      const group = button.dataset.filterGroup as 'category' | 'tool' | undefined;
+      const value = button.dataset.filterValue;
+      if (!group || !value) return;
+
+      const isActive = selected[group].has(value);
+      if (isActive) {
+        selected[group].delete(value);
+        button.setAttribute('aria-pressed', 'false');
+      } else {
+        selected[group].add(value);
+        button.setAttribute('aria-pressed', 'true');
+      }
+
+      applyFilters();
+    });
+  }
+
+  applyFilters();
+</script>
+
+<style>
+  .cases-page {
+    padding: var(--sp-6) var(--sp-4);
+  }
+
+  .cases-page__header {
+    margin-bottom: var(--sp-5);
+    max-width: 640px;
+  }
+
+  .cases-page__lead {
+    color: var(--color-muted);
+    margin-top: var(--sp-3);
+  }
+
+  .cases-page__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-4);
+  }
+
+  .cases-page__empty {
+    color: var(--color-muted);
+    padding: var(--sp-5) 0;
+  }
+</style>

@@ -1,0 +1,153 @@
+---
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import Badge from '../../components/Badge.astro';
+import { getPublishedCases, formatDate } from '../../lib/cases';
+
+export async function getStaticPaths() {
+  const cases = await getPublishedCases();
+  return cases.map((entry) => ({
+    params: { id: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { title, date, tools, category, tags, summary, result, links, coverImage, coverImageAlt } = entry.data;
+const { Content } = await render(entry);
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title={title} description={summary}>
+  <article class="container case-detail">
+    <a href={`${base}cases/`} class="mono case-detail__back">&larr; Cases一覧へ</a>
+
+    {coverImage && <Image src={coverImage} alt={coverImageAlt ?? ''} class="case-detail__image" width={960} height={540} />}
+
+    <header class="case-detail__header">
+      <p class="mono case-detail__meta"><time datetime={date}>{formatDate(date)}</time></p>
+      <h1>{title}</h1>
+      <div class="case-detail__tags">
+        <Badge label={category} variant="accent" />
+        {tools.map((tool) => <Badge label={tool} />)}
+        {tags.map((tag) => <Badge label={tag} />)}
+      </div>
+    </header>
+
+    <div class="case-detail__body">
+      <Content />
+    </div>
+
+    {
+      result && (
+        <section class="case-detail__result">
+          <h2 class="mono case-detail__result-label">RESULT</h2>
+          <p>{result}</p>
+        </section>
+      )
+    }
+
+    {
+      links.length > 0 && (
+        <section class="case-detail__links">
+          <h2 class="mono case-detail__result-label">LINKS</h2>
+          <ul>
+            {links.map((link) => (
+              <li>
+                <a href={link.url} class="case-detail__link" target={link.url.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</Layout>
+
+<style>
+  .case-detail {
+    padding: var(--sp-6) var(--sp-4);
+    max-width: 760px;
+  }
+
+  .case-detail__back {
+    display: inline-block;
+    color: var(--color-muted);
+    margin-bottom: var(--sp-4);
+  }
+
+  .case-detail__back:hover {
+    color: var(--color-accent);
+  }
+
+  .case-detail__image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--sp-4);
+  }
+
+  .case-detail__header {
+    margin-bottom: var(--sp-5);
+  }
+
+  .case-detail__meta {
+    color: var(--color-muted);
+    margin-bottom: var(--sp-2);
+  }
+
+  .case-detail__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+    margin-top: var(--sp-3);
+  }
+
+  .case-detail__body {
+    line-height: 1.8;
+  }
+
+  .case-detail__body :global(h2) {
+    margin-top: var(--sp-5);
+    margin-bottom: var(--sp-2);
+  }
+
+  .case-detail__body :global(p) {
+    margin-bottom: var(--sp-3);
+  }
+
+  .case-detail__result,
+  .case-detail__links {
+    margin-top: var(--sp-5);
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .case-detail__result-label {
+    color: var(--color-accent);
+    margin-bottom: var(--sp-2);
+  }
+
+  .case-detail__links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+
+  .case-detail__link {
+    color: var(--color-fg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .case-detail__link:hover {
+    border-bottom-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+</style>
