@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>支出チェック</title>
+    <meta
+      name="description"
+      content="毎月の支出を入力して、予算との比較・内訳・将来予測をその場でチェックできる家計シミュレーター"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <style>
+      /* ===== デザイントークン（NISA風ライトテーマ） ===== */
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj62UXskpdGuM-DR.woff2')
+          format('woff2');
+        font-weight: 300 700;
+        font-display: swap;
+      }
+      :root {
+        --color-bg: #f5f8fb;
+        --color-surface: #ffffff;
+        --color-surface-sub: #f1f5fa;
+        --color-fg: #0f1f33;
+        --color-muted: #56657a;
+        --color-border: #e2e8f0;
+        --color-primary: #1565d8;
+        --color-primary-fg: #ffffff;
+        --color-accent: #1faa72;
+        --color-warn: #e8a33d;
+        --color-danger: #d65745;
+        --color-primary-text: #0d52b3;
+        --color-accent-text: #137a52;
+        --color-warn-text: #9a6512;
+        --color-danger-text: #b23a2b;
+        --color-chart-1: #1565d8;
+        --color-chart-2: #1faa72;
+        --color-chart-3: #e8a33d;
+        --color-chart-4: #e06c3b;
+        --color-chart-5: #7a5cd0;
+        --color-chart-6: #2b9bb0;
+        --color-chart-7: #c2557f;
+        --grad-hero: linear-gradient(135deg, #e8f1ff 0%, #eafaf3 100%);
+        --font-sans: 'Space Grotesk', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+        --font-num: 'Space Grotesk', 'SF Mono', ui-monospace, monospace;
+        --fs-caption: clamp(0.75rem, 0.7rem + 0.1vw, 0.8125rem);
+        --fs-body: clamp(0.95rem, 0.9rem + 0.15vw, 1.0625rem);
+        --fs-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.4rem);
+        --fs-h2: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+        --fs-h1: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+        --fs-num-lg: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+        --sp-1: 4px;
+        --sp-2: 8px;
+        --sp-3: 16px;
+        --sp-4: 24px;
+        --sp-5: 32px;
+        --sp-6: 64px;
+        --radius: 14px;
+        --radius-sm: 8px;
+        --shadow-card: 0 1px 2px rgba(15, 31, 51, 0.06), 0 8px 24px rgba(15, 31, 51, 0.06);
+        --shadow-card-hover: 0 2px 4px rgba(15, 31, 51, 0.08), 0 12px 32px rgba(15, 31, 51, 0.1);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background-color: var(--color-bg);
+        color: var(--color-fg);
+        font-family: var(--font-sans);
+        font-size: var(--fs-body);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; line-height: 1.25; margin: 0; }
+      h1 { font-size: var(--fs-h1); }
+      h2 { font-size: var(--fs-h2); }
+      h3 { font-size: var(--fs-h3); }
+      p { margin: 0; }
+      a { color: var(--color-primary-text); text-decoration: none; }
+      .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+      .caption { font-size: var(--fs-caption); color: var(--color-muted); }
+      .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 var(--sp-4); }
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+      }
+      .button {
+        display: inline-flex; align-items: center; gap: var(--sp-2);
+        font-family: var(--font-sans); font-size: var(--fs-body); font-weight: 600;
+        color: var(--color-primary-fg); background: var(--color-primary);
+        border: 1px solid var(--color-primary); border-radius: var(--radius-sm);
+        padding: var(--sp-2) var(--sp-4); cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .button:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+      a:focus-visible, button:focus-visible, input:focus-visible {
+        outline: 2px solid var(--color-primary); outline-offset: 2px;
+      }
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      }
+
+      /* ===== ヘッダー / フッター ===== */
+      .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: var(--sp-3) 0; }
+      .site-header__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+      .site-header__logo { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--color-fg); font-weight: 700; font-size: 1.125rem; }
+      .site-header__mark { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--color-primary); color: var(--color-primary-fg); font-family: var(--font-num); font-size: 1rem; }
+      .site-footer { border-top: 1px solid var(--color-border); margin-top: var(--sp-6); padding: var(--sp-4) 0; }
+      .site-footer__inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-2); }
+
+      /* ===== Hero ===== */
+      .hero { background: var(--grad-hero); border-bottom: 1px solid var(--color-border); }
+      .hero__inner { padding: var(--sp-6) var(--sp-4) var(--sp-5); }
+      .hero__tag { color: var(--color-primary-text); letter-spacing: 0.12em; font-weight: 600; margin-bottom: var(--sp-2); }
+      .hero__title { margin-bottom: var(--sp-3); }
+      .hero__lead { color: var(--color-muted); max-width: 560px; }
+
+      /* ===== シミュレーター ===== */
+      .sim { padding: var(--sp-5) var(--sp-4); }
+      .sim__grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-4); align-items: start; }
+      .sim__inputs { padding: var(--sp-4); }
+      .sim__heading { font-size: var(--fs-h3); margin-bottom: var(--sp-3); }
+      .sim__rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--sp-3) 0; }
+      .cats { display: flex; flex-direction: column; }
+
+      .field { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+      .field__label { font-weight: 600; }
+      .field__control { display: inline-flex; align-items: center; gap: var(--sp-1); background: var(--color-surface-sub); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-3); }
+      .field__control:focus-within { border-color: var(--color-primary); }
+      .field__yen { color: var(--color-muted); font-family: var(--font-num); }
+      .field__input { width: 7rem; border: 0; background: transparent; color: var(--color-fg); font-size: var(--fs-body); text-align: right; }
+      .field__input:focus { outline: none; }
+      .budget-slider { width: 100%; margin-top: var(--sp-2); accent-color: var(--color-primary); cursor: pointer; }
+
+      /* カテゴリ行 */
+      .cat { display: grid; grid-template-columns: 7.5rem 1fr; grid-template-areas: 'label amount' 'slider slider'; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) 0; }
+      .cat__label { grid-area: label; display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
+      .cat__swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+      .cat__amount { grid-area: amount; display: inline-flex; align-items: center; gap: var(--sp-1); justify-self: end; background: var(--color-surface-sub); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-3); }
+      .cat__amount:focus-within { border-color: var(--color-primary); }
+      .cat__yen { color: var(--color-muted); font-family: var(--font-num); }
+      .cat__input { width: 6.5rem; border: 0; background: transparent; color: var(--color-fg); font-size: var(--fs-body); text-align: right; padding: 0; }
+      .cat__input:focus { outline: none; }
+      .cat__slider { grid-area: slider; width: 100%; accent-color: var(--accent, var(--color-primary)); cursor: pointer; }
+
+      /* 結果エリア */
+      .sim__results { position: sticky; top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3); }
+      .summaries { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+      .summary { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-3); }
+      .summary__label { margin-bottom: var(--sp-1); }
+      .summary__value { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.1; color: var(--color-fg); }
+      .summary[data-tone='good'] { border-left-color: var(--color-accent); }
+      .summary[data-tone='good'] .summary__value { color: var(--color-accent-text); }
+      .summary[data-tone='warn'] { border-left-color: var(--color-warn); }
+      .summary[data-tone='warn'] .summary__value { color: var(--color-warn-text); }
+      .summary[data-tone='bad'] { border-left-color: var(--color-danger); }
+      .summary[data-tone='bad'] .summary__value { color: var(--color-danger-text); }
+
+      /* ゲージ */
+      .gauge-card { padding: var(--sp-3); }
+      .gauge-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); gap: var(--sp-2); }
+      .gauge-card__title { font-weight: 600; }
+      .gauge-card__badge { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); font-weight: 600; padding: var(--sp-1) var(--sp-2); border-radius: 999px; background: var(--color-surface-sub); color: var(--color-accent-text); }
+      .gauge__track { height: 14px; background: var(--color-surface-sub); border-radius: 999px; overflow: hidden; }
+      .gauge__fill { height: 100%; background: var(--color-accent); border-radius: 999px; transition: width 0.25s ease, background 0.25s ease; }
+      .gauge__ticks { display: flex; justify-content: space-between; margin-top: var(--sp-1); font-size: var(--fs-caption); color: var(--color-muted); }
+      [data-status='near'] .gauge__fill { background: var(--color-warn); }
+      [data-status='near'] .gauge-card__badge { color: var(--color-warn-text); }
+      [data-status='over'] .gauge__fill { background: var(--color-danger); }
+      [data-status='over'] .gauge-card__badge { color: var(--color-danger-text); }
+
+      /* ドーナツ */
+      .donut-card { padding: var(--sp-4); }
+      .donut-card__title { font-size: var(--fs-h3); margin-bottom: var(--sp-3); }
+      .donut-card__body { display: grid; grid-template-columns: 160px 1fr; gap: var(--sp-4); align-items: center; }
+      .donut { position: relative; width: 160px; height: 160px; }
+      .donut__svg { width: 100%; height: 100%; }
+      .donut__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+      .donut__total { font-size: 1.1rem; font-weight: 700; }
+      .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+      .legend__item { display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: var(--sp-2); padding: 2px 0; }
+      .legend__swatch { width: 12px; height: 12px; border-radius: 3px; }
+      .legend__name { font-weight: 600; }
+      .legend__pct { min-width: 3.2rem; text-align: right; }
+
+      /* 将来予測 */
+      .forecast { padding: 0 var(--sp-4) var(--sp-6); }
+      .forecast__card { padding: var(--sp-4); }
+      .forecast__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+      .forecast__period { display: inline-flex; align-items: center; gap: var(--sp-2); }
+      .forecast__period input { width: 180px; accent-color: var(--color-primary); }
+      .forecast__months { font-weight: 700; min-width: 4rem; }
+      .forecast__body { display: grid; grid-template-columns: 1fr 240px; gap: var(--sp-5); align-items: end; }
+      .trend__bars { display: flex; align-items: flex-end; gap: 6px; height: 200px; padding-top: var(--sp-2); }
+      .trend__col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
+      .trend__bar { width: 100%; min-height: 2px; background: var(--color-primary); border-radius: 4px 4px 0 0; transition: height 0.25s ease, background 0.25s ease; }
+      .trend__bar[data-over='true'] { background: var(--color-danger); }
+      .trend__label { line-height: 1; }
+      .trend__axis { margin-top: var(--sp-2); text-align: right; }
+      .forecast__result { background: var(--color-surface-sub); border-radius: var(--radius-sm); padding: var(--sp-4); }
+      .forecast__total { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.1; margin: var(--sp-1) 0; }
+      .forecast__diff { font-weight: 600; color: var(--color-accent-text); }
+      .forecast__diff[data-over='true'] { color: var(--color-danger-text); }
+      .forecast__note { margin-top: var(--sp-2); }
+
+      @media (max-width: 860px) {
+        .sim__grid { grid-template-columns: 1fr; }
+        .sim__results { position: static; }
+        .forecast__body { grid-template-columns: 1fr; }
+        .donut-card__body { grid-template-columns: 140px 1fr; }
+      }
+      @media (max-width: 480px) {
+        .summaries { grid-template-columns: 1fr; }
+        .donut-card__body { grid-template-columns: 1fr; justify-items: center; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a href="#" class="site-header__logo">
+          <span class="site-header__mark" aria-hidden="true">¥</span>
+          支出チェック
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="container hero__inner">
+          <p class="hero__tag caption">MONTHLY EXPENSE CHECK</p>
+          <h1 class="hero__title">毎月の支出を、<br />その場でチェックしよう。</h1>
+          <p class="hero__lead">
+            カテゴリごとに金額を入れるだけ。予算との比較・内訳・このペースで続けた場合の将来予測が、
+            スライダーを動かすたびにリアルタイムで更新されます。
+          </p>
+        </div>
+      </section>
+
+      <!-- シミュレーター本体 -->
+      <section class="container sim">
+        <div class="sim__grid">
+          <!-- 入力エリア -->
+          <div class="card sim__inputs">
+            <h2 class="sim__heading">支出を入力</h2>
+
+            <div class="field">
+              <label class="field__label" for="income">月収（任意）</label>
+              <div class="field__control">
+                <span class="field__yen" aria-hidden="true">¥</span>
+                <input type="text" inputmode="numeric" id="income" class="num field__input" data-income-input autocomplete="off" />
+              </div>
+            </div>
+
+            <hr class="sim__rule" />
+            <div class="cats" data-cats></div>
+            <hr class="sim__rule" />
+
+            <div class="field">
+              <label class="field__label" for="budget">月間予算</label>
+              <div class="field__control">
+                <span class="field__yen" aria-hidden="true">¥</span>
+                <input type="text" inputmode="numeric" id="budget" class="num field__input" data-budget-input autocomplete="off" />
+              </div>
+            </div>
+            <input type="range" class="budget-slider" data-budget-slider min="0" max="600000" step="5000" aria-label="月間予算スライダー" />
+          </div>
+
+          <!-- 結果エリア -->
+          <div class="sim__results">
+            <div class="summaries">
+              <div class="summary" data-tone="neutral" data-summary-card="total">
+                <p class="summary__label caption">当月の支出合計</p>
+                <p class="summary__value num" data-summary-value="total" aria-live="polite"></p>
+              </div>
+              <div class="summary" data-tone="good" data-summary-card="remaining">
+                <p class="summary__label caption">予算残</p>
+                <p class="summary__value num" data-summary-value="remaining" aria-live="polite"></p>
+              </div>
+              <div class="summary" data-tone="good" data-summary-card="savings">
+                <p class="summary__label caption">貯蓄率（月収比）</p>
+                <p class="summary__value num" data-summary-value="savings" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <!-- 予算ゲージ -->
+            <div class="card gauge-card" data-gauge data-status="under">
+              <div class="gauge-card__head">
+                <span class="gauge-card__title">予算に対する使用率</span>
+                <span class="gauge-card__badge">
+                  <span data-gauge-icon></span>
+                  <span class="num" data-gauge-rate></span>
+                  <span data-gauge-label></span>
+                </span>
+              </div>
+              <div class="gauge" role="img" aria-label="予算使用率">
+                <div class="gauge__track"><div class="gauge__fill" data-gauge-fill></div></div>
+                <div class="gauge__ticks" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+              </div>
+            </div>
+
+            <!-- 内訳ドーナツ -->
+            <div class="card donut-card">
+              <h3 class="donut-card__title">支出の内訳</h3>
+              <div class="donut-card__body">
+                <div class="donut">
+                  <svg viewBox="0 0 42 42" class="donut__svg" role="img" aria-label="支出内訳の円グラフ">
+                    <circle class="donut__hole" cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-surface-sub)" stroke-width="6"></circle>
+                    <g data-donut></g>
+                  </svg>
+                  <div class="donut__center">
+                    <span class="caption">合計</span>
+                    <span class="num donut__total" data-donut-total></span>
+                  </div>
+                </div>
+                <ul class="legend" data-legend></ul>
+                <p class="donut__empty caption" data-donut-empty hidden>金額を入力すると内訳が表示されます。</p>
+              </div>
+              <table class="sr-only" data-sr-table>
+                <caption>支出内訳</caption>
+                <thead><tr><th>カテゴリ</th><th>金額</th><th>割合</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 将来予測 -->
+      <section class="container forecast">
+        <div class="card forecast__card">
+          <div class="forecast__head">
+            <h2 class="sim__heading">このペースで続けると…</h2>
+            <div class="forecast__period">
+              <label for="months" class="caption">予測期間</label>
+              <input type="range" id="months" data-months-slider min="3" max="24" step="3" aria-label="予測期間（月数）" />
+              <span class="num forecast__months" data-months-label></span>
+            </div>
+          </div>
+          <div class="forecast__body">
+            <div class="trend" role="img" aria-label="将来の累計支出推移">
+              <div class="trend__bars" data-trend></div>
+              <p class="trend__axis caption">経過月数 →</p>
+            </div>
+            <div class="forecast__result">
+              <p class="caption" data-forecast-caption></p>
+              <p class="num forecast__total" data-forecast-total></p>
+              <p class="forecast__diff" data-forecast-diff></p>
+              <p class="caption forecast__note">※ 現在の入力金額が毎月続くと仮定した単純な概算です。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <p class="caption">&copy; <span data-year></span> 支出チェック</p>
+        <p class="caption">入力データはお使いのブラウザ内（localStorage）にのみ保存され、外部送信されません。</p>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        'use strict';
+
+        /* ===== カテゴリ定義 ===== */
+        var CATEGORIES = [
+          { key: 'food', label: '食費', colorIndex: 1, initial: 60000, sliderMax: 150000, step: 1000 },
+          { key: 'housing', label: '住居', colorIndex: 2, initial: 80000, sliderMax: 250000, step: 5000 },
+          { key: 'utility', label: '水道光熱', colorIndex: 3, initial: 18000, sliderMax: 60000, step: 1000 },
+          { key: 'comm', label: '通信', colorIndex: 4, initial: 10000, sliderMax: 40000, step: 500 },
+          { key: 'transport', label: '交通', colorIndex: 5, initial: 12000, sliderMax: 60000, step: 1000 },
+          { key: 'leisure', label: '娯楽', colorIndex: 6, initial: 25000, sliderMax: 100000, step: 1000 },
+          { key: 'other', label: 'その他', colorIndex: 7, initial: 20000, sliderMax: 100000, step: 1000 }
+        ];
+        var STORAGE_KEY = 'expense-check:v1';
+        var STORAGE_VERSION = 1;
+        var yenFmt = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 0 });
+
+        /* ===== 純粋計算ロジック ===== */
+        function normalizeAmount(v) {
+          var n = typeof v === 'string' ? Number(v.replace(/[^0-9.-]/g, '')) : v;
+          if (!isFinite(n) || n < 0) return 0;
+          return Math.round(n);
+        }
+        function calcTotal(expenses) {
+          return CATEGORIES.reduce(function (s, c) { return s + normalizeAmount(expenses[c.key] || 0); }, 0);
+        }
+        function pct(value, total) { return total <= 0 ? 0 : (value / total) * 100; }
+        function budgetStatus(total, budget) {
+          if (budget <= 0) return 'under';
+          var r = (total / budget) * 100;
+          if (r > 100) return 'over';
+          if (r >= 90) return 'near';
+          return 'under';
+        }
+        function calcSummary(state) {
+          var total = calcTotal(state.expenses);
+          var budget = normalizeAmount(state.budget);
+          var breakdown = CATEGORIES.map(function (c) {
+            var amount = normalizeAmount(state.expenses[c.key] || 0);
+            return { key: c.key, label: c.label, colorIndex: c.colorIndex, amount: amount, ratio: pct(amount, total) };
+          });
+          return {
+            total: total, budget: budget, remaining: budget - total,
+            usageRate: pct(total, budget), status: budgetStatus(total, budget), breakdown: breakdown
+          };
+        }
+        function savingsRate(income, total) {
+          var inc = normalizeAmount(income);
+          if (inc <= 0) return null;
+          return ((inc - total) / inc) * 100;
+        }
+        function calcForecast(state) {
+          var months = Math.max(1, Math.round(state.months));
+          var total = calcTotal(state.expenses);
+          var budget = normalizeAmount(state.budget);
+          var cumulative = [];
+          for (var m = 1; m <= months; m++) cumulative.push(total * m);
+          return {
+            months: months, totalCumulative: total * months, cumulative: cumulative,
+            budgetCumulative: budget * months, budgetDiff: (total - budget) * months
+          };
+        }
+        function donutSegments(breakdown) {
+          var segs = [], acc = 0;
+          for (var i = 0; i < breakdown.length; i++) {
+            var b = breakdown[i];
+            if (b.amount <= 0 || b.ratio <= 0) continue;
+            segs.push({ colorIndex: b.colorIndex, label: b.label, amount: b.amount, ratio: b.ratio,
+              dash: b.ratio + ' ' + (100 - b.ratio), offset: 25 - acc });
+            acc += b.ratio;
+          }
+          return segs;
+        }
+        function formatYen(v) { return '¥' + yenFmt.format(Math.round(v)); }
+        function formatPct(v) {
+          var r = Math.round(v * 10) / 10;
+          return Number.isInteger(r) ? r + '%' : r.toFixed(1) + '%';
+        }
+
+        /* ===== 状態 ===== */
+        function defaultState() {
+          var expenses = {};
+          CATEGORIES.forEach(function (c) { expenses[c.key] = c.initial; });
+          return { expenses: expenses, budget: 240000, income: 350000, months: 12 };
+        }
+        function loadState() {
+          var base = defaultState();
+          try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return base;
+            var parsed = JSON.parse(raw);
+            if (!parsed || parsed.v !== STORAGE_VERSION || !parsed.data) return base;
+            var d = parsed.data;
+            var expenses = {};
+            CATEGORIES.forEach(function (c) {
+              expenses[c.key] = d.expenses && d.expenses[c.key] != null ? normalizeAmount(d.expenses[c.key]) : base.expenses[c.key];
+            });
+            return {
+              expenses: expenses,
+              budget: normalizeAmount(d.budget != null ? d.budget : base.budget),
+              income: normalizeAmount(d.income != null ? d.income : base.income),
+              months: typeof d.months === 'number' ? d.months : base.months
+            };
+          } catch (e) { return base; }
+        }
+        function saveState(state) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: STORAGE_VERSION, data: state })); } catch (e) {}
+        }
+
+        var state = loadState();
+        var $ = function (sel) { return document.querySelector(sel); };
+        var STATUS_LABEL = { under: '予算内', near: '予算に接近', over: '予算オーバー' };
+        var STATUS_ICON = { under: '✓', near: '△', over: '!' };
+
+        /* ===== 入力UIの生成 ===== */
+        function buildCats() {
+          var html = '';
+          CATEGORIES.forEach(function (c) {
+            var sw = 'var(--color-chart-' + c.colorIndex + ')';
+            html +=
+              '<div class="cat">' +
+                '<label class="cat__label" for="amt-' + c.key + '">' +
+                  '<span class="cat__swatch" style="background:' + sw + '" aria-hidden="true"></span>' + c.label +
+                '</label>' +
+                '<div class="cat__amount"><span class="cat__yen" aria-hidden="true">¥</span>' +
+                  '<input type="text" inputmode="numeric" id="amt-' + c.key + '" class="num cat__input" data-amount-input="' + c.key + '" autocomplete="off" /></div>' +
+                '<input type="range" class="cat__slider" data-amount-slider="' + c.key + '" min="0" max="' + c.sliderMax + '" step="' + c.step + '" aria-label="' + c.label + 'の金額スライダー" style="--accent:' + sw + '" />' +
+              '</div>';
+          });
+          $('[data-cats]').innerHTML = html;
+        }
+
+        /* ===== 描画（rAF合体） ===== */
+        var pending = false;
+        function scheduleRender() {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(function () { pending = false; render(); saveState(state); });
+        }
+        function setText(sel, t) { var el = $(sel); if (el) el.textContent = t; }
+
+        function render() {
+          var summary = calcSummary(state);
+          var forecast = calcForecast(state);
+
+          setText('[data-summary-value="total"]', formatYen(summary.total));
+          var remCard = $('[data-summary-card="remaining"]');
+          if (remCard) remCard.setAttribute('data-tone', summary.remaining < 0 ? 'bad' : 'good');
+          setText('[data-summary-value="remaining"]', formatYen(summary.remaining));
+
+          var rate = savingsRate(state.income, summary.total);
+          setText('[data-summary-value="savings"]', rate === null ? '—' : formatPct(rate));
+          var savCard = $('[data-summary-card="savings"]');
+          if (savCard) savCard.setAttribute('data-tone', rate !== null && rate >= 0 ? 'good' : 'bad');
+
+          var gauge = $('[data-gauge]');
+          if (gauge) gauge.setAttribute('data-status', summary.status);
+          var fill = $('[data-gauge-fill]');
+          if (fill) fill.style.width = Math.min(summary.usageRate, 100) + '%';
+          setText('[data-gauge-rate]', formatPct(summary.usageRate));
+          setText('[data-gauge-label]', STATUS_LABEL[summary.status]);
+          setText('[data-gauge-icon]', STATUS_ICON[summary.status]);
+          var gImg = $('.gauge[role="img"]');
+          if (gImg) gImg.setAttribute('aria-label', '予算使用率 ' + formatPct(summary.usageRate));
+
+          var segs = donutSegments(summary.breakdown);
+          var donut = $('[data-donut]');
+          if (donut) {
+            donut.innerHTML = segs.map(function (s) {
+              return '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-chart-' + s.colorIndex + ')" stroke-width="6" pathLength="100" stroke-dasharray="' + s.dash + '" stroke-dashoffset="' + s.offset + '"></circle>';
+            }).join('');
+          }
+          setText('[data-donut-total]', formatYen(summary.total));
+
+          var legend = $('[data-legend]');
+          if (legend) {
+            legend.innerHTML = summary.breakdown.filter(function (b) { return b.amount > 0; }).map(function (b) {
+              return '<li class="legend__item"><span class="legend__swatch" style="background:var(--color-chart-' + b.colorIndex + ')"></span><span class="legend__name">' + b.label + '</span><span class="num legend__amount">' + formatYen(b.amount) + '</span><span class="num legend__pct caption">' + formatPct(b.ratio) + '</span></li>';
+            }).join('');
+          }
+          var empty = $('[data-donut-empty]');
+          if (empty) empty.hidden = summary.total > 0;
+
+          var srBody = $('[data-sr-table] tbody');
+          if (srBody) {
+            srBody.innerHTML = summary.breakdown.map(function (b) {
+              return '<tr><td>' + b.label + '</td><td>' + formatYen(b.amount) + '</td><td>' + formatPct(b.ratio) + '</td></tr>';
+            }).join('');
+          }
+
+          setText('[data-months-label]', forecast.months + 'ヶ月');
+          setText('[data-forecast-caption]', forecast.months + 'ヶ月後の累計支出');
+          setText('[data-forecast-total]', formatYen(forecast.totalCumulative));
+          var diffEl = $('[data-forecast-diff]');
+          if (diffEl) {
+            diffEl.textContent = '予算比 ' + (forecast.budgetDiff > 0 ? '+' : '') + formatYen(forecast.budgetDiff);
+            diffEl.setAttribute('data-over', forecast.budgetDiff > 0 ? 'true' : 'false');
+          }
+
+          var trend = $('[data-trend]');
+          if (trend) {
+            var max = Math.max.apply(null, forecast.cumulative.concat([1]));
+            trend.innerHTML = forecast.cumulative.map(function (v, i) {
+              var over = forecast.budgetCumulative > 0 && v > forecast.budgetCumulative * ((i + 1) / forecast.months);
+              var showLabel = forecast.months > 12 ? (i + 1) % 2 === 0 : true;
+              return '<div class="trend__col"><div class="trend__bar" style="height:' + (v / max) * 100 + '%" data-over="' + over + '"></div><span class="trend__label caption">' + (showLabel ? i + 1 : '') + '</span></div>';
+            }).join('');
+          }
+
+          syncInputs();
+        }
+
+        function syncInputs() {
+          CATEGORIES.forEach(function (c) {
+            var amount = normalizeAmount(state.expenses[c.key] || 0);
+            var input = $('[data-amount-input="' + c.key + '"]');
+            var slider = $('[data-amount-slider="' + c.key + '"]');
+            if (input && document.activeElement !== input) input.value = amount.toLocaleString('ja-JP');
+            if (slider) {
+              if (amount > Number(slider.max)) slider.max = String(Math.ceil(amount / c.step) * c.step);
+              slider.value = String(amount);
+            }
+          });
+          var bi = $('[data-budget-input]'), bs = $('[data-budget-slider]');
+          if (bi && document.activeElement !== bi) bi.value = normalizeAmount(state.budget).toLocaleString('ja-JP');
+          if (bs) { if (state.budget > Number(bs.max)) bs.max = String(state.budget); bs.value = String(normalizeAmount(state.budget)); }
+          var ii = $('[data-income-input]');
+          if (ii && document.activeElement !== ii) ii.value = normalizeAmount(state.income).toLocaleString('ja-JP');
+          var ms = $('[data-months-slider]');
+          if (ms) ms.value = String(state.months);
+        }
+
+        /* ===== イベント結線 ===== */
+        function bind() {
+          CATEGORIES.forEach(function (c) {
+            var input = $('[data-amount-input="' + c.key + '"]');
+            var slider = $('[data-amount-slider="' + c.key + '"]');
+            if (input) input.addEventListener('input', function (e) { state.expenses[c.key] = normalizeAmount(e.target.value); scheduleRender(); });
+            if (slider) slider.addEventListener('input', function (e) { state.expenses[c.key] = normalizeAmount(e.target.value); scheduleRender(); });
+          });
+          var bi = $('[data-budget-input]'), bs = $('[data-budget-slider]');
+          if (bi) bi.addEventListener('input', function (e) { state.budget = normalizeAmount(e.target.value); scheduleRender(); });
+          if (bs) bs.addEventListener('input', function (e) { state.budget = normalizeAmount(e.target.value); scheduleRender(); });
+          var ii = $('[data-income-input]');
+          if (ii) ii.addEventListener('input', function (e) { state.income = normalizeAmount(e.target.value); scheduleRender(); });
+          var ms = $('[data-months-slider]');
+          if (ms) ms.addEventListener('input', function (e) { state.months = Number(e.target.value) || 1; scheduleRender(); });
+        }
+
+        var yearEl = $('[data-year]');
+        if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+        buildCats();
+        bind();
+        render();
+      })();
+    </script>
+  </body>
+</html>
