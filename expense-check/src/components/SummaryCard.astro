@@ -1,0 +1,66 @@
+---
+interface Props {
+  label: string;
+  /** 表示済みの値文字列（SSR初期値） */
+  value: string;
+  /** 値のDOM更新用フック名 */
+  field: string;
+  /** トーン: neutral / good / warn / bad */
+  tone?: 'neutral' | 'good' | 'warn' | 'bad';
+  hint?: string;
+}
+
+const { label, value, field, tone = 'neutral', hint } = Astro.props;
+---
+
+<div class="summary" data-tone={tone} data-summary-card={field}>
+  <p class="summary__label caption">{label}</p>
+  <p class="summary__value num" data-summary-value={field} aria-live="polite">{value}</p>
+  {hint && <p class="summary__hint caption" data-summary-hint={field}>{hint}</p>}
+</div>
+
+<style>
+  .summary {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--sp-3);
+  }
+
+  .summary__label {
+    margin-bottom: var(--sp-1);
+  }
+
+  .summary__value {
+    font-size: var(--fs-num-lg);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-fg);
+  }
+
+  .summary__hint {
+    margin-top: var(--sp-1);
+  }
+
+  .summary[data-tone='good'] {
+    border-left-color: var(--color-accent);
+  }
+  .summary[data-tone='good'] .summary__value {
+    color: var(--color-accent-text);
+  }
+
+  .summary[data-tone='warn'] {
+    border-left-color: var(--color-warn);
+  }
+  .summary[data-tone='warn'] .summary__value {
+    color: var(--color-warn-text);
+  }
+
+  .summary[data-tone='bad'] {
+    border-left-color: var(--color-danger);
+  }
+  .summary[data-tone='bad'] .summary__value {
+    color: var(--color-danger-text);
+  }
+</style>

@@ -1,0 +1,59 @@
+---
+import Layout from '../layouts/Layout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="使い方">
+  <section class="container page">
+    <h1 class="page__title">使い方</h1>
+    <p class="page__lead">
+      「支出チェック」は、毎月の家計支出をその場で見える化するシンプルなシミュレーターです。
+      金融庁のNISAつみたてシミュレーターのように、入力するそばから結果が更新されます。
+    </p>
+
+    <h2 class="page__h2">3ステップ</h2>
+    <ol class="steps">
+      <li><strong>支出を入力</strong> — カテゴリごとに金額を入力、またはスライダーで調整します。</li>
+      <li><strong>予算と比べる</strong> — 月間予算を設定すると、使用率ゲージと予算残が表示されます。</li>
+      <li><strong>将来を見る</strong> — このペースで続けた場合の累計支出を予測します。</li>
+    </ol>
+
+    <h2 class="page__h2">データの扱い</h2>
+    <p class="page__text">
+      入力した金額はお使いのブラウザ内（localStorage）にのみ保存されます。
+      サーバーへ送信されることはなく、別の端末やブラウザには共有されません。
+    </p>
+
+    <p class="page__back"><a href={base}>← シミュレーターに戻る</a></p>
+  </section>
+</Layout>
+
+<style>
+  .page {
+    padding: var(--sp-6) var(--sp-4);
+    max-width: 760px;
+  }
+  .page__title {
+    margin-bottom: var(--sp-3);
+  }
+  .page__lead {
+    color: var(--color-muted);
+    margin-bottom: var(--sp-5);
+  }
+  .page__h2 {
+    font-size: var(--fs-h3);
+    margin: var(--sp-5) 0 var(--sp-3);
+  }
+  .page__text {
+    color: var(--color-muted);
+  }
+  .steps {
+    padding-left: var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+  .page__back {
+    margin-top: var(--sp-5);
+  }
+</style>

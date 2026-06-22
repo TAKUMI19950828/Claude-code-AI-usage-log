@@ -1,0 +1,32 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <p class="caption">&copy; {year} 支出チェック</p>
+    <p class="caption site-footer__note">
+      入力データはお使いのブラウザ内（localStorage）にのみ保存され、外部送信されません。
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--sp-6);
+    padding: var(--sp-4) 0;
+  }
+
+  .site-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+
+  .site-footer__note {
+    text-align: right;
+  }
+</style>

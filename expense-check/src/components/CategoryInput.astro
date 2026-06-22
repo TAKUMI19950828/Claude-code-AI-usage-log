@@ -1,0 +1,115 @@
+---
+import type { Category } from '../lib/calc';
+
+interface Props {
+  category: Category;
+  value: number;
+}
+
+const { category, value } = Astro.props;
+// 入力値がスライダー上限を超える場合は上限を広げる
+const sliderMax = Math.max(category.sliderMax, Math.ceil(value / category.step) * category.step);
+const swatch = `var(--color-chart-${category.colorIndex})`;
+---
+
+<div class="cat" data-cat-row={category.key}>
+  <label class="cat__label" for={`amt-${category.key}`}>
+    <span class="cat__swatch" style={`background:${swatch}`} aria-hidden="true"></span>
+    {category.label}
+  </label>
+  <div class="cat__amount">
+    <span class="cat__yen" aria-hidden="true">¥</span>
+    <input
+      type="text"
+      inputmode="numeric"
+      id={`amt-${category.key}`}
+      class="num cat__input"
+      data-amount-input={category.key}
+      value={value.toLocaleString('ja-JP')}
+      autocomplete="off"
+    />
+  </div>
+  <input
+    type="range"
+    class="cat__slider"
+    data-amount-slider={category.key}
+    min="0"
+    max={sliderMax}
+    step={category.step}
+    value={value}
+    aria-label={`${category.label}の金額スライダー`}
+    style={`--accent:${swatch}`}
+  />
+</div>
+
+<style>
+  .cat {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    grid-template-areas:
+      'label amount'
+      'slider slider';
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    padding: var(--sp-2) 0;
+  }
+
+  .cat__label {
+    grid-area: label;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-weight: 600;
+    font-size: var(--fs-body);
+  }
+
+  .cat__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex: none;
+  }
+
+  .cat__amount {
+    grid-area: amount;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    justify-self: end;
+    background: var(--color-surface-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--sp-1) var(--sp-3);
+    transition: border-color 0.15s ease;
+  }
+
+  .cat__amount:focus-within {
+    border-color: var(--color-primary);
+  }
+
+  .cat__yen {
+    color: var(--color-muted);
+    font-family: var(--font-num);
+  }
+
+  .cat__input {
+    width: 6.5rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-fg);
+    font-size: var(--fs-body);
+    text-align: right;
+    padding: 0;
+  }
+
+  .cat__input:focus {
+    outline: none;
+  }
+
+  .cat__slider {
+    grid-area: slider;
+    width: 100%;
+    accent-color: var(--accent, var(--color-primary));
+    cursor: pointer;
+  }
+</style>

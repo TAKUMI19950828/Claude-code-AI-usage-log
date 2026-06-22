@@ -1,0 +1,523 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CategoryInput from '../components/CategoryInput.astro';
+import SummaryCard from '../components/SummaryCard.astro';
+import {
+  CATEGORIES,
+  calcSummary,
+  calcForecast,
+  donutSegments,
+  savingsRate,
+  formatYen,
+  formatPct,
+  type AppState,
+} from '../lib/calc';
+
+// SSR 初期状態（既定値）。クライアントの expense.ts が localStorage から復元・再描画する。
+const initialBudget = 240000;
+const initialState: AppState = {
+  expenses: Object.fromEntries(CATEGORIES.map((c) => [c.key, c.initial])),
+  budget: initialBudget,
+  income: 350000,
+  months: 12,
+};
+
+const summary = calcSummary(initialState);
+const forecast = calcForecast(initialState);
+const segments = donutSegments(summary.breakdown);
+const gaugeWidth = Math.min(summary.usageRate, 100);
+const trendMax = Math.max(...forecast.cumulative, 1);
+const statusLabel = { under: '予算内', near: '予算に接近', over: '予算オーバー' } as const;
+const statusIcon = { under: '✓', near: '△', over: '!' } as const;
+const initialSavings = savingsRate(initialState.income, summary.total);
+---
+
+<Layout title="支出チェック">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <p class="hero__tag caption">MONTHLY EXPENSE CHECK</p>
+      <h1 class="hero__title">毎月の支出を、<br />その場でチェックしよう。</h1>
+      <p class="hero__lead">
+        カテゴリごとに金額を入れるだけ。予算との比較・内訳・このペースで続けた場合の将来予測が、
+        スライダーを動かすたびにリアルタイムで更新されます。
+      </p>
+    </div>
+  </section>
+
+  <!-- シミュレーター本体 -->
+  <section class="container sim" data-sim>
+    <div class="sim__grid">
+      <!-- 入力エリア -->
+      <div class="card sim__inputs">
+        <h2 class="sim__heading">支出を入力</h2>
+
+        <div class="field">
+          <label class="field__label" for="income">月収（任意）</label>
+          <div class="field__control">
+            <span class="field__yen" aria-hidden="true">¥</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              id="income"
+              class="num field__input"
+              data-income-input
+              value={initialState.income.toLocaleString('ja-JP')}
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <hr class="sim__rule" />
+
+        <div class="cats">
+          {
+            CATEGORIES.map((c) => (
+              <CategoryInput category={c} value={initialState.expenses[c.key]} />
+            ))
+          }
+        </div>
+
+        <hr class="sim__rule" />
+
+        <div class="field">
+          <label class="field__label" for="budget">月間予算</label>
+          <div class="field__control">
+            <span class="field__yen" aria-hidden="true">¥</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              id="budget"
+              class="num field__input"
+              data-budget-input
+              value={initialState.budget.toLocaleString('ja-JP')}
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <input
+          type="range"
+          class="budget-slider"
+          data-budget-slider
+          min="0"
+          max="600000"
+          step="5000"
+          value={initialState.budget}
+          aria-label="月間予算スライダー"
+        />
+      </div>
+
+      <!-- 結果エリア（sticky） -->
+      <div class="sim__results">
+        <div class="summaries">
+          <SummaryCard label="当月の支出合計" value={formatYen(summary.total)} field="total" tone="neutral" />
+          <SummaryCard
+            label="予算残"
+            value={formatYen(summary.remaining)}
+            field="remaining"
+            tone={summary.remaining < 0 ? 'bad' : 'good'}
+          />
+          <SummaryCard
+            label="貯蓄率（月収比）"
+            value={initialSavings === null ? '—' : formatPct(initialSavings)}
+            field="savings"
+            tone={initialSavings !== null && initialSavings >= 0 ? 'good' : 'bad'}
+          />
+        </div>
+
+        <!-- 予算ゲージ -->
+        <div class="card gauge-card" data-gauge data-status={summary.status}>
+          <div class="gauge-card__head">
+            <span class="gauge-card__title">予算に対する使用率</span>
+            <span class="gauge-card__badge" data-gauge-badge>
+              <span data-gauge-icon>{statusIcon[summary.status]}</span>
+              <span class="num" data-gauge-rate>{formatPct(summary.usageRate)}</span>
+              <span data-gauge-label>{statusLabel[summary.status]}</span>
+            </span>
+          </div>
+          <div class="gauge" role="img" aria-label={`予算使用率 ${formatPct(summary.usageRate)}`}>
+            <div class="gauge__track">
+              <div class="gauge__fill" data-gauge-fill style={`width:${gaugeWidth}%`}></div>
+            </div>
+            <div class="gauge__ticks" aria-hidden="true">
+              <span>0%</span><span>50%</span><span>100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 内訳ドーナツ -->
+        <div class="card donut-card">
+          <h3 class="donut-card__title">支出の内訳</h3>
+          <div class="donut-card__body">
+            <div class="donut" data-donut-wrap>
+              <svg viewBox="0 0 42 42" class="donut__svg" role="img" aria-label="支出内訳の円グラフ">
+                <circle class="donut__hole" cx="21" cy="21" r="15.915" fill="none"
+                  stroke="var(--color-surface-sub)" stroke-width="6"></circle>
+                <g data-donut>
+                  {
+                    segments.map((s) => (
+                      <circle
+                        cx="21"
+                        cy="21"
+                        r="15.915"
+                        fill="none"
+                        stroke={`var(--color-chart-${s.colorIndex})`}
+                        stroke-width="6"
+                        pathLength="100"
+                        stroke-dasharray={s.dash}
+                        stroke-dashoffset={s.offset}
+                      />
+                    ))
+                  }
+                </g>
+              </svg>
+              <div class="donut__center">
+                <span class="caption">合計</span>
+                <span class="num donut__total" data-donut-total>{formatYen(summary.total)}</span>
+              </div>
+            </div>
+            <ul class="legend" data-legend>
+              {
+                summary.breakdown
+                  .filter((b) => b.amount > 0)
+                  .map((b) => (
+                    <li class="legend__item">
+                      <span class="legend__swatch" style={`background:var(--color-chart-${b.colorIndex})`} />
+                      <span class="legend__name">{b.label}</span>
+                      <span class="num legend__amount">{formatYen(b.amount)}</span>
+                      <span class="num legend__pct caption">{formatPct(b.ratio)}</span>
+                    </li>
+                  ))
+              }
+            </ul>
+            <p class="donut__empty caption" data-donut-empty hidden>
+              金額を入力すると内訳が表示されます。
+            </p>
+          </div>
+          <!-- スクリーンリーダー用の数値テーブル代替 -->
+          <table class="sr-only" data-sr-table>
+            <caption>支出内訳</caption>
+            <thead><tr><th>カテゴリ</th><th>金額</th><th>割合</th></tr></thead>
+            <tbody>
+              {
+                summary.breakdown.map((b) => (
+                  <tr><td>{b.label}</td><td>{formatYen(b.amount)}</td><td>{formatPct(b.ratio)}</td></tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 将来予測 -->
+  <section class="container forecast">
+    <div class="card forecast__card">
+      <div class="forecast__head">
+        <h2 class="sim__heading">このペースで続けると…</h2>
+        <div class="forecast__period">
+          <label for="months" class="caption">予測期間</label>
+          <input
+            type="range"
+            id="months"
+            data-months-slider
+            min="3"
+            max="24"
+            step="3"
+            value={initialState.months}
+            aria-label="予測期間（月数）"
+          />
+          <span class="num forecast__months" data-months-label>{initialState.months}ヶ月</span>
+        </div>
+      </div>
+
+      <div class="forecast__body">
+        <div class="trend" role="img" aria-label="将来の累計支出推移">
+          <div class="trend__bars" data-trend>
+            {
+              forecast.cumulative.map((v, i) => (
+                <div class="trend__col">
+                  <div
+                    class="trend__bar"
+                    style={`height:${(v / trendMax) * 100}%`}
+                    data-over={forecast.budgetCumulative > 0 && v > forecast.budgetCumulative * ((i + 1) / forecast.months) ? 'true' : 'false'}
+                  />
+                  <span class="trend__label caption">{i + 1}</span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="trend__axis caption">経過月数 →</p>
+        </div>
+
+        <div class="forecast__result">
+          <p class="caption">{initialState.months}ヶ月後の累計支出</p>
+          <p class="num forecast__total" data-forecast-total>{formatYen(forecast.totalCumulative)}</p>
+          <p class="forecast__diff" data-forecast-diff data-over={forecast.budgetDiff > 0 ? 'true' : 'false'}>
+            予算比 {forecast.budgetDiff > 0 ? '+' : ''}{formatYen(forecast.budgetDiff)}
+          </p>
+          <p class="caption forecast__note">
+            ※ 現在の入力金額が毎月続くと仮定した単純な概算です。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    import '../scripts/expense.ts';
+  </script>
+</Layout>
+
+<style>
+  .hero {
+    background: var(--grad-hero);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .hero__inner {
+    padding: var(--sp-6) var(--sp-4) var(--sp-5);
+  }
+  .hero__tag {
+    color: var(--color-primary-text);
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    margin-bottom: var(--sp-2);
+  }
+  .hero__title {
+    margin-bottom: var(--sp-3);
+  }
+  .hero__lead {
+    color: var(--color-muted);
+    max-width: 560px;
+  }
+
+  .sim {
+    padding: var(--sp-5) var(--sp-4);
+  }
+  .sim__grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: var(--sp-4);
+    align-items: start;
+  }
+  .sim__inputs {
+    padding: var(--sp-4);
+  }
+  .sim__heading {
+    font-size: var(--fs-h3);
+    margin-bottom: var(--sp-3);
+  }
+  .sim__rule {
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    margin: var(--sp-3) 0;
+  }
+  .cats {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+  }
+  .field__label {
+    font-weight: 600;
+  }
+  .field__control {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    background: var(--color-surface-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--sp-1) var(--sp-3);
+  }
+  .field__control:focus-within {
+    border-color: var(--color-primary);
+  }
+  .field__yen {
+    color: var(--color-muted);
+    font-family: var(--font-num);
+  }
+  .field__input {
+    width: 7rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-fg);
+    font-size: var(--fs-body);
+    text-align: right;
+  }
+  .field__input:focus {
+    outline: none;
+  }
+  .budget-slider {
+    width: 100%;
+    margin-top: var(--sp-2);
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  /* 結果エリア */
+  .sim__results {
+    position: sticky;
+    top: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+  .summaries {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-3);
+  }
+
+  /* ゲージ */
+  .gauge-card {
+    padding: var(--sp-3);
+  }
+  .gauge-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-2);
+    gap: var(--sp-2);
+  }
+  .gauge-card__title {
+    font-weight: 600;
+  }
+  .gauge-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    padding: var(--sp-1) var(--sp-2);
+    border-radius: 999px;
+    background: var(--color-surface-sub);
+    color: var(--color-accent-text);
+  }
+  .gauge__track {
+    height: 14px;
+    background: var(--color-surface-sub);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .gauge__fill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 999px;
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+  .gauge__ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--sp-1);
+    font-size: var(--fs-caption);
+    color: var(--color-muted);
+  }
+  [data-status='near'] .gauge__fill { background: var(--color-warn); }
+  [data-status='near'] .gauge-card__badge { color: var(--color-warn-text); }
+  [data-status='over'] .gauge__fill { background: var(--color-danger); }
+  [data-status='over'] .gauge-card__badge { color: var(--color-danger-text); }
+
+  /* ドーナツ */
+  .donut-card { padding: var(--sp-4); }
+  .donut-card__title { font-size: var(--fs-h3); margin-bottom: var(--sp-3); }
+  .donut-card__body {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: var(--sp-4);
+    align-items: center;
+  }
+  .donut { position: relative; width: 160px; height: 160px; }
+  .donut__svg { width: 100%; height: 100%; transform: rotate(0deg); }
+  .donut__center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .donut__total { font-size: 1.1rem; font-weight: 700; }
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+  .legend__item {
+    display: grid;
+    grid-template-columns: 14px 1fr auto auto;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 2px 0;
+  }
+  .legend__swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .legend__name { font-weight: 600; }
+  .legend__amount { color: var(--color-fg); }
+  .legend__pct { min-width: 3.2rem; text-align: right; }
+
+  /* 将来予測 */
+  .forecast { padding: 0 var(--sp-4) var(--sp-6); }
+  .forecast__card { padding: var(--sp-4); }
+  .forecast__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-4);
+  }
+  .forecast__period {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+  .forecast__period input { width: 180px; accent-color: var(--color-primary); }
+  .forecast__months { font-weight: 700; min-width: 4rem; }
+  .forecast__body {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: var(--sp-5);
+    align-items: end;
+  }
+  .trend__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 200px;
+    padding-top: var(--sp-2);
+  }
+  .trend__col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
+  .trend__bar {
+    width: 100%;
+    min-height: 2px;
+    background: var(--color-primary);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.25s ease, background 0.25s ease;
+  }
+  .trend__bar[data-over='true'] { background: var(--color-danger); }
+  .trend__label { line-height: 1; }
+  .trend__axis { margin-top: var(--sp-2); text-align: right; }
+  .forecast__result {
+    background: var(--color-surface-sub);
+    border-radius: var(--radius-sm);
+    padding: var(--sp-4);
+  }
+  .forecast__total { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.1; margin: var(--sp-1) 0; }
+  .forecast__diff { font-weight: 600; color: var(--color-accent-text); }
+  .forecast__diff[data-over='true'] { color: var(--color-danger-text); }
+  .forecast__note { margin-top: var(--sp-2); }
+
+  @media (max-width: 860px) {
+    .sim__grid { grid-template-columns: 1fr; }
+    .sim__results { position: static; }
+    .forecast__body { grid-template-columns: 1fr; }
+    .donut-card__body { grid-template-columns: 140px 1fr; }
+  }
+  @media (max-width: 480px) {
+    .summaries { grid-template-columns: 1fr; }
+    .donut-card__body { grid-template-columns: 1fr; justify-items: center; }
+  }
+</style>

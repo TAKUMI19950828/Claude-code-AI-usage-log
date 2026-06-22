@@ -1,0 +1,92 @@
+---
+const base = import.meta.env.BASE_URL;
+const navItems = [
+  { label: 'シミュレーター', href: base },
+  { label: '使い方', href: `${base}about/` },
+];
+const currentPath = new URL(Astro.request.url).pathname;
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href={base} class="site-header__logo">
+      <span class="site-header__mark" aria-hidden="true">¥</span>
+      支出チェック
+    </a>
+    <nav aria-label="メインナビゲーション">
+      <ul class="site-header__nav">
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="site-header__link"
+                aria-current={currentPath === item.href ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--sp-3) 0;
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+  }
+
+  .site-header__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--color-fg);
+    font-weight: 700;
+    font-size: 1.125rem;
+    letter-spacing: 0.01em;
+  }
+
+  .site-header__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: var(--color-primary-fg);
+    font-family: var(--font-num);
+    font-size: 1rem;
+  }
+
+  .site-header__nav {
+    display: flex;
+    list-style: none;
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-header__link {
+    color: var(--color-muted);
+    padding-bottom: var(--sp-1);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .site-header__link:hover,
+  .site-header__link[aria-current='page'] {
+    color: var(--color-fg);
+    border-bottom-color: var(--color-primary);
+  }
+</style>
