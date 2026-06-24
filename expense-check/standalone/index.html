@@ -87,19 +87,10 @@
         font-size: 1.1rem; box-shadow: var(--shadow-pop);
       }
 
-      /* Hero */
-      .hero { background: var(--grad-hero); border-radius: var(--radius); margin: var(--sp-4) 0; padding: var(--sp-5); }
-      .hero__title { margin-bottom: var(--sp-2); }
-      .hero__title .accent {
-        background: var(--grad-primary); -webkit-background-clip: text; background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .hero__lead { color: var(--color-muted); max-width: 540px; }
-
       /* 月切替バー */
       .monthbar {
         display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
-        margin: var(--sp-4) 0;
+        margin: var(--sp-5) 0 var(--sp-4);
       }
       .monthbar__btn {
         width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--color-border);
@@ -125,11 +116,20 @@
       /* 項目リスト */
       .items { display: flex; flex-direction: column; gap: var(--sp-2); }
       .item {
-        display: grid; grid-template-columns: 16px 1fr 8.5rem 36px; align-items: center; gap: var(--sp-2);
+        display: grid; grid-template-columns: 22px 16px 1fr 8.5rem 36px; align-items: center; gap: var(--sp-2);
         background: var(--color-surface-sub); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3);
-        border: 2px solid transparent; transition: border-color 0.12s ease;
+        border: 2px solid transparent; transition: border-color 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
       }
       .item:focus-within { border-color: var(--grape); }
+      .item__handle {
+        cursor: grab; color: var(--color-muted); font-size: 1.1rem; line-height: 1;
+        background: transparent; border: 0; padding: 0; touch-action: none;
+        display: grid; place-items: center; border-radius: 6px;
+      }
+      .item__handle:hover { color: var(--grape-text); }
+      .item__handle:active { cursor: grabbing; }
+      .item.is-dragging { opacity: 0.45; box-shadow: var(--shadow-pop); }
+      .item.is-over { border-top-color: var(--grape); box-shadow: 0 -3px 0 var(--grape); }
       .item__dot { width: 16px; height: 16px; border-radius: 50%; }
       .item__label {
         border: 0; background: transparent; font-family: var(--font-sans); font-size: var(--fs-body);
@@ -190,7 +190,7 @@
       }
       @media (max-width: 480px) {
         .donut-card__body { grid-template-columns: 1fr; justify-items: center; }
-        .item { grid-template-columns: 16px 1fr 7rem 32px; }
+        .item { grid-template-columns: 22px 16px 1fr 7rem 32px; }
       }
       @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
@@ -205,11 +205,6 @@
           </span>
         </div>
       </header>
-
-      <section class="hero">
-        <h1 class="hero__title">毎月の支出を<br /><span class="accent">カラフルに</span>チェック！</h1>
-        <p class="hero__lead">月を切り替えて、支出の項目を自由に追加・削除。入力するとすぐに内訳グラフが更新されます。</p>
-      </section>
 
       <!-- 月切替 -->
       <div class="monthbar">
@@ -378,6 +373,7 @@
           month.items.forEach(function (it) {
             html +=
               '<div class="item" data-item="' + it.id + '">' +
+                '<button class="item__handle" data-handle aria-label="ドラッグして並べ替え" title="ドラッグで並べ替え">⠿</button>' +
                 '<span class="item__dot" style="background:var(--' + it.color + ')"></span>' +
                 '<input class="item__label" type="text" value="' + escapeAttr(it.label) + '" data-field="label" aria-label="項目名" />' +
                 '<span class="item__amount"><span class="item__yen" aria-hidden="true">¥</span>' +
@@ -470,6 +466,61 @@
               buildItems(); scheduleRender();
             });
           });
+          bindDnd();
+        }
+
+        /* ===== ドラッグ並べ替え（ハンドル起点） ===== */
+        var dragId = null;
+        function bindDnd() {
+          var rows = document.querySelectorAll('[data-item]');
+          Array.prototype.forEach.call(rows, function (row) {
+            var handle = row.querySelector('[data-handle]');
+            // ハンドルを押している間だけ行を draggable にする（入力欄の選択を妨げない）
+            if (handle) {
+              handle.addEventListener('mousedown', function () { row.setAttribute('draggable', 'true'); });
+              handle.addEventListener('touchstart', function () { row.setAttribute('draggable', 'true'); }, { passive: true });
+            }
+            row.addEventListener('dragstart', function (e) {
+              dragId = row.getAttribute('data-item');
+              row.classList.add('is-dragging');
+              if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch (err) {} }
+            });
+            row.addEventListener('dragend', function () {
+              row.classList.remove('is-dragging');
+              row.removeAttribute('draggable');
+              clearOver();
+              dragId = null;
+            });
+            row.addEventListener('dragover', function (e) {
+              e.preventDefault();
+              if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+              if (row.getAttribute('data-item') !== dragId) { clearOver(); row.classList.add('is-over'); }
+            });
+            row.addEventListener('dragleave', function () { row.classList.remove('is-over'); });
+            row.addEventListener('drop', function (e) {
+              e.preventDefault();
+              var targetId = row.getAttribute('data-item');
+              clearOver();
+              if (!dragId || dragId === targetId) return;
+              reorder(dragId, targetId);
+            });
+          });
+        }
+        function clearOver() {
+          var os = document.querySelectorAll('.item.is-over');
+          Array.prototype.forEach.call(os, function (el) { el.classList.remove('is-over'); });
+        }
+        function reorder(fromId, toId) {
+          var month = currentMonth();
+          var items = month.items;
+          var from = -1, to = -1;
+          items.forEach(function (it, i) { if (it.id === fromId) from = i; if (it.id === toId) to = i; });
+          if (from < 0 || to < 0) return;
+          var moved = items.splice(from, 1)[0];
+          // 削除で前方のインデックスが詰まるため、下方向移動時は1つ補正
+          var insertAt = from < to ? to - 1 : to;
+          items.splice(insertAt, 0, moved);
+          buildItems(); scheduleRender();
         }
         function findItem(id) {
           var month = currentMonth();
