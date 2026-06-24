@@ -4,13 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>支出チェック</title>
-    <meta
-      name="description"
-      content="毎月の支出を入力して、予算との比較・内訳・将来予測をその場でチェックできる家計シミュレーター"
-    />
+    <meta name="description" content="月ごとの支出を入力して、内訳をカラフルなグラフでチェックできる家計簿" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <style>
-      /* ===== デザイントークン（NISA風ライトテーマ） ===== */
       @font-face {
         font-family: 'Space Grotesk';
         src: url('https://fonts.gstatic.com/s/spacegrotesk/v16/V8mQoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj62UXskpdGuM-DR.woff2')
@@ -19,300 +15,235 @@
         font-display: swap;
       }
       :root {
-        --color-bg: #f5f8fb;
+        /* ベース */
+        --color-bg: #fff8fb;
         --color-surface: #ffffff;
-        --color-surface-sub: #f1f5fa;
-        --color-fg: #0f1f33;
-        --color-muted: #56657a;
-        --color-border: #e2e8f0;
-        --color-primary: #1565d8;
-        --color-primary-fg: #ffffff;
-        --color-accent: #1faa72;
-        --color-warn: #e8a33d;
-        --color-danger: #d65745;
-        --color-primary-text: #0d52b3;
-        --color-accent-text: #137a52;
-        --color-warn-text: #9a6512;
-        --color-danger-text: #b23a2b;
-        --color-chart-1: #1565d8;
-        --color-chart-2: #1faa72;
-        --color-chart-3: #e8a33d;
-        --color-chart-4: #e06c3b;
-        --color-chart-5: #7a5cd0;
-        --color-chart-6: #2b9bb0;
-        --color-chart-7: #c2557f;
-        --grad-hero: linear-gradient(135deg, #e8f1ff 0%, #eafaf3 100%);
+        --color-surface-sub: #f6f3ff;
+        --color-fg: #2b2350;
+        --color-muted: #7a749a;
+        --color-border: #efe7fb;
+
+        /* ポップなアクセント */
+        --pink: #ff5d9e;
+        --pink-text: #d6256f;
+        --grape: #8b5cf6;
+        --grape-text: #6d28d9;
+        --sky: #38bdf8;
+        --grad-hero: linear-gradient(135deg, #ffe1f1 0%, #e7ddff 50%, #d9f3ff 100%);
+        --grad-primary: linear-gradient(135deg, #ff5d9e 0%, #8b5cf6 100%);
+        --grad-total: linear-gradient(135deg, #fff0f7 0%, #f0ebff 100%);
+
+        /* カラフルなカテゴリパレット（循環割当） */
+        --c1: #ff6b9d; --c2: #ffa63d; --c3: #ffd23f; --c4: #4ad991;
+        --c5: #38bdf8; --c6: #8b5cf6; --c7: #f472b6; --c8: #2dd4bf;
+
         --font-sans: 'Space Grotesk', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
         --font-num: 'Space Grotesk', 'SF Mono', ui-monospace, monospace;
         --fs-caption: clamp(0.75rem, 0.7rem + 0.1vw, 0.8125rem);
         --fs-body: clamp(0.95rem, 0.9rem + 0.15vw, 1.0625rem);
-        --fs-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.4rem);
-        --fs-h2: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+        --fs-h3: clamp(1.2rem, 1.05rem + 0.5vw, 1.45rem);
         --fs-h1: clamp(2rem, 1.6rem + 1.8vw, 3rem);
-        --fs-num-lg: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
-        --sp-1: 4px;
-        --sp-2: 8px;
-        --sp-3: 16px;
-        --sp-4: 24px;
-        --sp-5: 32px;
-        --sp-6: 64px;
-        --radius: 14px;
-        --radius-sm: 8px;
-        --shadow-card: 0 1px 2px rgba(15, 31, 51, 0.06), 0 8px 24px rgba(15, 31, 51, 0.06);
-        --shadow-card-hover: 0 2px 4px rgba(15, 31, 51, 0.08), 0 12px 32px rgba(15, 31, 51, 0.1);
+        --fs-num-lg: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+        --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 24px; --sp-5: 32px; --sp-6: 56px;
+        --radius: 22px; --radius-sm: 12px;
+        --shadow-card: 0 6px 20px rgba(139, 92, 246, 0.10), 0 2px 6px rgba(255, 93, 158, 0.08);
+        --shadow-pop: 0 10px 24px rgba(255, 93, 158, 0.30);
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
       body {
-        background-color: var(--color-bg);
+        background: var(--color-bg);
         color: var(--color-fg);
         font-family: var(--font-sans);
         font-size: var(--fs-body);
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
       }
-      h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; line-height: 1.25; margin: 0; }
+      h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; }
       h1 { font-size: var(--fs-h1); }
-      h2 { font-size: var(--fs-h2); }
       h3 { font-size: var(--fs-h3); }
       p { margin: 0; }
-      a { color: var(--color-primary-text); text-decoration: none; }
       .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
       .caption { font-size: var(--fs-caption); color: var(--color-muted); }
-      .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 var(--sp-4); }
+      .container { width: 100%; max-width: 1040px; margin: 0 auto; padding: 0 var(--sp-4); }
       .card {
         background: var(--color-surface);
-        border: 1px solid var(--color-border);
+        border: 2px solid var(--color-border);
         border-radius: var(--radius);
         box-shadow: var(--shadow-card);
       }
-      .button {
-        display: inline-flex; align-items: center; gap: var(--sp-2);
-        font-family: var(--font-sans); font-size: var(--fs-body); font-weight: 600;
-        color: var(--color-primary-fg); background: var(--color-primary);
-        border: 1px solid var(--color-primary); border-radius: var(--radius-sm);
-        padding: var(--sp-2) var(--sp-4); cursor: pointer;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      input:focus-visible, button:focus-visible {
+        outline: 3px solid var(--grape); outline-offset: 2px;
       }
-      .button:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
-      a:focus-visible, button:focus-visible, input:focus-visible {
-        outline: 2px solid var(--color-primary); outline-offset: 2px;
-      }
-      .sr-only {
-        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+      /* ヘッダー */
+      .site-header { padding: var(--sp-4) 0 0; }
+      .site-header__inner { display: flex; align-items: center; gap: var(--sp-2); }
+      .site-header__logo { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 700; font-size: 1.2rem; color: var(--color-fg); }
+      .site-header__mark {
+        display: inline-grid; place-items: center; width: 34px; height: 34px;
+        border-radius: 12px; background: var(--grad-primary); color: #fff;
+        font-size: 1.1rem; box-shadow: var(--shadow-pop);
       }
 
-      /* ===== ヘッダー / フッター ===== */
-      .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: var(--sp-3) 0; }
-      .site-header__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
-      .site-header__logo { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--color-fg); font-weight: 700; font-size: 1.125rem; }
-      .site-header__mark { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--color-primary); color: var(--color-primary-fg); font-family: var(--font-num); font-size: 1rem; }
-      .site-footer { border-top: 1px solid var(--color-border); margin-top: var(--sp-6); padding: var(--sp-4) 0; }
+      /* Hero */
+      .hero { background: var(--grad-hero); border-radius: var(--radius); margin: var(--sp-4) 0; padding: var(--sp-5); }
+      .hero__title { margin-bottom: var(--sp-2); }
+      .hero__title .accent {
+        background: var(--grad-primary); -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .hero__lead { color: var(--color-muted); max-width: 540px; }
+
+      /* 月切替バー */
+      .monthbar {
+        display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
+        margin: var(--sp-4) 0;
+      }
+      .monthbar__btn {
+        width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--color-border);
+        background: var(--color-surface); color: var(--grape-text); font-size: 1.3rem; font-weight: 700;
+        cursor: pointer; display: grid; place-items: center; transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      .monthbar__btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+      .monthbar__month {
+        font-family: var(--font-num); font-size: 1.25rem; font-weight: 700;
+        border: 2px solid var(--color-border); border-radius: 999px;
+        padding: var(--sp-2) var(--sp-4); background: var(--color-surface); color: var(--color-fg);
+        cursor: pointer;
+      }
+      .monthbar__month::-webkit-calendar-picker-indicator { cursor: pointer; }
+
+      /* メイングリッド */
+      .sim { padding-bottom: var(--sp-5); }
+      .sim__grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-4); align-items: start; }
+      .panel { padding: var(--sp-4); }
+      .panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+      .panel__title { font-size: var(--fs-h3); display: inline-flex; align-items: center; gap: var(--sp-2); }
+
+      /* 項目リスト */
+      .items { display: flex; flex-direction: column; gap: var(--sp-2); }
+      .item {
+        display: grid; grid-template-columns: 16px 1fr 8.5rem 36px; align-items: center; gap: var(--sp-2);
+        background: var(--color-surface-sub); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3);
+        border: 2px solid transparent; transition: border-color 0.12s ease;
+      }
+      .item:focus-within { border-color: var(--grape); }
+      .item__dot { width: 16px; height: 16px; border-radius: 50%; }
+      .item__label {
+        border: 0; background: transparent; font-family: var(--font-sans); font-size: var(--fs-body);
+        font-weight: 600; color: var(--color-fg); width: 100%; padding: var(--sp-1);
+      }
+      .item__label:focus { outline: none; }
+      .item__amount { display: inline-flex; align-items: center; gap: 2px; justify-content: flex-end; }
+      .item__yen { color: var(--color-muted); font-family: var(--font-num); }
+      .item__input {
+        width: 6.5rem; border: 0; background: transparent; text-align: right;
+        font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: var(--fs-body); color: var(--color-fg);
+      }
+      .item__input:focus { outline: none; }
+      .item__del {
+        width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+        background: #fff; color: var(--pink-text); font-size: 1.1rem; line-height: 1;
+        display: grid; place-items: center; transition: background 0.12s ease, transform 0.12s ease;
+      }
+      .item__del:hover { background: #ffe1ee; transform: scale(1.08); }
+      .add-btn {
+        margin-top: var(--sp-3); width: 100%; padding: var(--sp-3);
+        border: 2px dashed var(--grape); border-radius: var(--radius-sm); background: transparent;
+        color: var(--grape-text); font-family: var(--font-sans); font-weight: 700; font-size: var(--fs-body);
+        cursor: pointer; transition: background 0.12s ease;
+      }
+      .add-btn:hover { background: var(--color-surface-sub); }
+
+      /* 結果パネル */
+      .result { position: sticky; top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-4); }
+      .total-card {
+        background: var(--grad-total); border: 2px solid var(--color-border); border-radius: var(--radius);
+        padding: var(--sp-4); text-align: center;
+      }
+      .total-card__label { font-weight: 700; color: var(--grape-text); }
+      .total-card__value { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.05; margin-top: var(--sp-1); }
+      .total-card__sub { color: var(--color-muted); margin-top: var(--sp-1); }
+
+      .donut-card { padding: var(--sp-4); }
+      .donut-card__title { font-size: var(--fs-h3); margin-bottom: var(--sp-3); display: inline-flex; align-items: center; gap: var(--sp-2); }
+      .donut-card__body { display: grid; grid-template-columns: 170px 1fr; gap: var(--sp-4); align-items: center; }
+      .donut { position: relative; width: 170px; height: 170px; }
+      .donut__svg { width: 100%; height: 100%; }
+      .donut__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .donut__total { font-size: 1.15rem; font-weight: 700; }
+      .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+      .legend__item { display: grid; grid-template-columns: 16px 1fr auto auto; align-items: center; gap: var(--sp-2); padding: 3px 0; }
+      .legend__swatch { width: 14px; height: 14px; border-radius: 50%; }
+      .legend__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .legend__pct { min-width: 3.4rem; text-align: right; }
+      .empty { color: var(--color-muted); text-align: center; padding: var(--sp-4) 0; }
+
+      .site-footer { border-top: 2px solid var(--color-border); margin-top: var(--sp-6); padding: var(--sp-4) 0; }
       .site-footer__inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-2); }
 
-      /* ===== Hero ===== */
-      .hero { background: var(--grad-hero); border-bottom: 1px solid var(--color-border); }
-      .hero__inner { padding: var(--sp-6) var(--sp-4) var(--sp-5); }
-      .hero__tag { color: var(--color-primary-text); letter-spacing: 0.12em; font-weight: 600; margin-bottom: var(--sp-2); }
-      .hero__title { margin-bottom: var(--sp-3); }
-      .hero__lead { color: var(--color-muted); max-width: 560px; }
-
-      /* ===== シミュレーター ===== */
-      .sim { padding: var(--sp-5) var(--sp-4); }
-      .sim__grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-4); align-items: start; }
-      .sim__inputs { padding: var(--sp-4); }
-      .sim__heading { font-size: var(--fs-h3); margin-bottom: var(--sp-3); }
-      .sim__rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--sp-3) 0; }
-      .cats { display: flex; flex-direction: column; }
-
-      .field { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
-      .field__label { font-weight: 600; }
-      .field__control { display: inline-flex; align-items: center; gap: var(--sp-1); background: var(--color-surface-sub); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-3); }
-      .field__control:focus-within { border-color: var(--color-primary); }
-      .field__yen { color: var(--color-muted); font-family: var(--font-num); }
-      .field__input { width: 7rem; border: 0; background: transparent; color: var(--color-fg); font-size: var(--fs-body); text-align: right; }
-      .field__input:focus { outline: none; }
-      .budget-slider { width: 100%; margin-top: var(--sp-2); accent-color: var(--color-primary); cursor: pointer; }
-
-      /* カテゴリ行 */
-      .cat { display: grid; grid-template-columns: 7.5rem 1fr; grid-template-areas: 'label amount' 'slider slider'; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) 0; }
-      .cat__label { grid-area: label; display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
-      .cat__swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
-      .cat__amount { grid-area: amount; display: inline-flex; align-items: center; gap: var(--sp-1); justify-self: end; background: var(--color-surface-sub); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-3); }
-      .cat__amount:focus-within { border-color: var(--color-primary); }
-      .cat__yen { color: var(--color-muted); font-family: var(--font-num); }
-      .cat__input { width: 6.5rem; border: 0; background: transparent; color: var(--color-fg); font-size: var(--fs-body); text-align: right; padding: 0; }
-      .cat__input:focus { outline: none; }
-      .cat__slider { grid-area: slider; width: 100%; accent-color: var(--accent, var(--color-primary)); cursor: pointer; }
-
-      /* 結果エリア */
-      .sim__results { position: sticky; top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3); }
-      .summaries { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
-      .summary { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--sp-3); }
-      .summary__label { margin-bottom: var(--sp-1); }
-      .summary__value { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.1; color: var(--color-fg); }
-      .summary[data-tone='good'] { border-left-color: var(--color-accent); }
-      .summary[data-tone='good'] .summary__value { color: var(--color-accent-text); }
-      .summary[data-tone='warn'] { border-left-color: var(--color-warn); }
-      .summary[data-tone='warn'] .summary__value { color: var(--color-warn-text); }
-      .summary[data-tone='bad'] { border-left-color: var(--color-danger); }
-      .summary[data-tone='bad'] .summary__value { color: var(--color-danger-text); }
-
-      /* ゲージ */
-      .gauge-card { padding: var(--sp-3); }
-      .gauge-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); gap: var(--sp-2); }
-      .gauge-card__title { font-weight: 600; }
-      .gauge-card__badge { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); font-weight: 600; padding: var(--sp-1) var(--sp-2); border-radius: 999px; background: var(--color-surface-sub); color: var(--color-accent-text); }
-      .gauge__track { height: 14px; background: var(--color-surface-sub); border-radius: 999px; overflow: hidden; }
-      .gauge__fill { height: 100%; background: var(--color-accent); border-radius: 999px; transition: width 0.25s ease, background 0.25s ease; }
-      .gauge__ticks { display: flex; justify-content: space-between; margin-top: var(--sp-1); font-size: var(--fs-caption); color: var(--color-muted); }
-      [data-status='near'] .gauge__fill { background: var(--color-warn); }
-      [data-status='near'] .gauge-card__badge { color: var(--color-warn-text); }
-      [data-status='over'] .gauge__fill { background: var(--color-danger); }
-      [data-status='over'] .gauge-card__badge { color: var(--color-danger-text); }
-
-      /* ドーナツ */
-      .donut-card { padding: var(--sp-4); }
-      .donut-card__title { font-size: var(--fs-h3); margin-bottom: var(--sp-3); }
-      .donut-card__body { display: grid; grid-template-columns: 160px 1fr; gap: var(--sp-4); align-items: center; }
-      .donut { position: relative; width: 160px; height: 160px; }
-      .donut__svg { width: 100%; height: 100%; }
-      .donut__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-      .donut__total { font-size: 1.1rem; font-weight: 700; }
-      .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
-      .legend__item { display: grid; grid-template-columns: 14px 1fr auto auto; align-items: center; gap: var(--sp-2); padding: 2px 0; }
-      .legend__swatch { width: 12px; height: 12px; border-radius: 3px; }
-      .legend__name { font-weight: 600; }
-      .legend__pct { min-width: 3.2rem; text-align: right; }
-
-      /* 将来予測 */
-      .forecast { padding: 0 var(--sp-4) var(--sp-6); }
-      .forecast__card { padding: var(--sp-4); }
-      .forecast__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4); }
-      .forecast__period { display: inline-flex; align-items: center; gap: var(--sp-2); }
-      .forecast__period input { width: 180px; accent-color: var(--color-primary); }
-      .forecast__months { font-weight: 700; min-width: 4rem; }
-      .forecast__body { display: grid; grid-template-columns: 1fr 240px; gap: var(--sp-5); align-items: end; }
-      .trend__bars { display: flex; align-items: flex-end; gap: 6px; height: 200px; padding-top: var(--sp-2); }
-      .trend__col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
-      .trend__bar { width: 100%; min-height: 2px; background: var(--color-primary); border-radius: 4px 4px 0 0; transition: height 0.25s ease, background 0.25s ease; }
-      .trend__bar[data-over='true'] { background: var(--color-danger); }
-      .trend__label { line-height: 1; }
-      .trend__axis { margin-top: var(--sp-2); text-align: right; }
-      .forecast__result { background: var(--color-surface-sub); border-radius: var(--radius-sm); padding: var(--sp-4); }
-      .forecast__total { font-size: var(--fs-num-lg); font-weight: 700; line-height: 1.1; margin: var(--sp-1) 0; }
-      .forecast__diff { font-weight: 600; color: var(--color-accent-text); }
-      .forecast__diff[data-over='true'] { color: var(--color-danger-text); }
-      .forecast__note { margin-top: var(--sp-2); }
-
-      @media (max-width: 860px) {
+      @media (max-width: 820px) {
         .sim__grid { grid-template-columns: 1fr; }
-        .sim__results { position: static; }
-        .forecast__body { grid-template-columns: 1fr; }
-        .donut-card__body { grid-template-columns: 140px 1fr; }
+        .result { position: static; }
       }
       @media (max-width: 480px) {
-        .summaries { grid-template-columns: 1fr; }
         .donut-card__body { grid-template-columns: 1fr; justify-items: center; }
+        .item { grid-template-columns: 16px 1fr 7rem 32px; }
       }
-      @media (prefers-reduced-motion: reduce) {
-        * { transition: none !important; animation: none !important; }
-      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
   </head>
   <body>
-    <header class="site-header">
-      <div class="container site-header__inner">
-        <a href="#" class="site-header__logo">
-          <span class="site-header__mark" aria-hidden="true">¥</span>
-          支出チェック
-        </a>
-      </div>
-    </header>
-
-    <main>
-      <!-- Hero -->
-      <section class="hero">
-        <div class="container hero__inner">
-          <p class="hero__tag caption">MONTHLY EXPENSE CHECK</p>
-          <h1 class="hero__title">毎月の支出を、<br />その場でチェックしよう。</h1>
-          <p class="hero__lead">
-            カテゴリごとに金額を入れるだけ。予算との比較・内訳・このペースで続けた場合の将来予測が、
-            スライダーを動かすたびにリアルタイムで更新されます。
-          </p>
+    <div class="container">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <span class="site-header__logo">
+            <span class="site-header__mark" aria-hidden="true">¥</span>
+            支出チェック
+          </span>
         </div>
+      </header>
+
+      <section class="hero">
+        <h1 class="hero__title">毎月の支出を<br /><span class="accent">カラフルに</span>チェック！</h1>
+        <p class="hero__lead">月を切り替えて、支出の項目を自由に追加・削除。入力するとすぐに内訳グラフが更新されます。</p>
       </section>
 
-      <!-- シミュレーター本体 -->
-      <section class="container sim">
+      <!-- 月切替 -->
+      <div class="monthbar">
+        <button class="monthbar__btn" data-prev aria-label="前の月">‹</button>
+        <input type="month" class="monthbar__month num" data-month aria-label="表示する月" />
+        <button class="monthbar__btn" data-next aria-label="次の月">›</button>
+      </div>
+
+      <section class="sim">
         <div class="sim__grid">
-          <!-- 入力エリア -->
-          <div class="card sim__inputs">
-            <h2 class="sim__heading">支出を入力</h2>
-
-            <div class="field">
-              <label class="field__label" for="income">月収（任意）</label>
-              <div class="field__control">
-                <span class="field__yen" aria-hidden="true">¥</span>
-                <input type="text" inputmode="numeric" id="income" class="num field__input" data-income-input autocomplete="off" />
-              </div>
+          <!-- 入力パネル -->
+          <div class="card panel">
+            <div class="panel__head">
+              <h2 class="panel__title">📝 支出の項目</h2>
+              <span class="caption" data-count></span>
             </div>
-
-            <hr class="sim__rule" />
-            <div class="cats" data-cats></div>
-            <hr class="sim__rule" />
-
-            <div class="field">
-              <label class="field__label" for="budget">月間予算</label>
-              <div class="field__control">
-                <span class="field__yen" aria-hidden="true">¥</span>
-                <input type="text" inputmode="numeric" id="budget" class="num field__input" data-budget-input autocomplete="off" />
-              </div>
-            </div>
-            <input type="range" class="budget-slider" data-budget-slider min="0" max="600000" step="5000" aria-label="月間予算スライダー" />
+            <div class="items" data-items></div>
+            <button class="add-btn" data-add>＋ 項目を追加</button>
           </div>
 
-          <!-- 結果エリア -->
-          <div class="sim__results">
-            <div class="summaries">
-              <div class="summary" data-tone="neutral" data-summary-card="total">
-                <p class="summary__label caption">当月の支出合計</p>
-                <p class="summary__value num" data-summary-value="total" aria-live="polite"></p>
-              </div>
-              <div class="summary" data-tone="good" data-summary-card="remaining">
-                <p class="summary__label caption">予算残</p>
-                <p class="summary__value num" data-summary-value="remaining" aria-live="polite"></p>
-              </div>
-              <div class="summary" data-tone="good" data-summary-card="savings">
-                <p class="summary__label caption">貯蓄率（月収比）</p>
-                <p class="summary__value num" data-summary-value="savings" aria-live="polite"></p>
-              </div>
+          <!-- 結果パネル -->
+          <div class="result">
+            <div class="total-card">
+              <p class="total-card__label">この月の支出合計</p>
+              <p class="num total-card__value" data-total aria-live="polite"></p>
+              <p class="caption total-card__sub" data-total-sub></p>
             </div>
 
-            <!-- 予算ゲージ -->
-            <div class="card gauge-card" data-gauge data-status="under">
-              <div class="gauge-card__head">
-                <span class="gauge-card__title">予算に対する使用率</span>
-                <span class="gauge-card__badge">
-                  <span data-gauge-icon></span>
-                  <span class="num" data-gauge-rate></span>
-                  <span data-gauge-label></span>
-                </span>
-              </div>
-              <div class="gauge" role="img" aria-label="予算使用率">
-                <div class="gauge__track"><div class="gauge__fill" data-gauge-fill></div></div>
-                <div class="gauge__ticks" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
-              </div>
-            </div>
-
-            <!-- 内訳ドーナツ -->
             <div class="card donut-card">
-              <h3 class="donut-card__title">支出の内訳</h3>
+              <h3 class="donut-card__title">🍩 支出の内訳</h3>
               <div class="donut-card__body">
                 <div class="donut">
                   <svg viewBox="0 0 42 42" class="donut__svg" role="img" aria-label="支出内訳の円グラフ">
-                    <circle class="donut__hole" cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-surface-sub)" stroke-width="6"></circle>
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-surface-sub)" stroke-width="6"></circle>
                     <g data-donut></g>
                   </svg>
                   <div class="donut__center">
@@ -321,11 +252,11 @@
                   </div>
                 </div>
                 <ul class="legend" data-legend></ul>
-                <p class="donut__empty caption" data-donut-empty hidden>金額を入力すると内訳が表示されます。</p>
+                <p class="empty" data-empty hidden>項目に金額を入力すると<br />内訳が表示されます🎨</p>
               </div>
               <table class="sr-only" data-sr-table>
                 <caption>支出内訳</caption>
-                <thead><tr><th>カテゴリ</th><th>金額</th><th>割合</th></tr></thead>
+                <thead><tr><th>項目</th><th>金額</th><th>割合</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -333,171 +264,102 @@
         </div>
       </section>
 
-      <!-- 将来予測 -->
-      <section class="container forecast">
-        <div class="card forecast__card">
-          <div class="forecast__head">
-            <h2 class="sim__heading">このペースで続けると…</h2>
-            <div class="forecast__period">
-              <label for="months" class="caption">予測期間</label>
-              <input type="range" id="months" data-months-slider min="3" max="24" step="3" aria-label="予測期間（月数）" />
-              <span class="num forecast__months" data-months-label></span>
-            </div>
-          </div>
-          <div class="forecast__body">
-            <div class="trend" role="img" aria-label="将来の累計支出推移">
-              <div class="trend__bars" data-trend></div>
-              <p class="trend__axis caption">経過月数 →</p>
-            </div>
-            <div class="forecast__result">
-              <p class="caption" data-forecast-caption></p>
-              <p class="num forecast__total" data-forecast-total></p>
-              <p class="forecast__diff" data-forecast-diff></p>
-              <p class="caption forecast__note">※ 現在の入力金額が毎月続くと仮定した単純な概算です。</p>
-            </div>
-          </div>
+      <footer class="site-footer">
+        <div class="site-footer__inner">
+          <p class="caption">&copy; <span data-year></span> 支出チェック</p>
+          <p class="caption">入力データはブラウザ内（localStorage）にのみ保存されます。</p>
         </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="container site-footer__inner">
-        <p class="caption">&copy; <span data-year></span> 支出チェック</p>
-        <p class="caption">入力データはお使いのブラウザ内（localStorage）にのみ保存され、外部送信されません。</p>
-      </div>
-    </footer>
+      </footer>
+    </div>
 
     <script>
       (function () {
         'use strict';
 
-        /* ===== カテゴリ定義 ===== */
-        var CATEGORIES = [
-          { key: 'food', label: '食費', colorIndex: 1, initial: 60000, sliderMax: 150000, step: 1000 },
-          { key: 'housing', label: '住居', colorIndex: 2, initial: 80000, sliderMax: 250000, step: 5000 },
-          { key: 'utility', label: '水道光熱', colorIndex: 3, initial: 18000, sliderMax: 60000, step: 1000 },
-          { key: 'comm', label: '通信', colorIndex: 4, initial: 10000, sliderMax: 40000, step: 500 },
-          { key: 'transport', label: '交通', colorIndex: 5, initial: 12000, sliderMax: 60000, step: 1000 },
-          { key: 'leisure', label: '娯楽', colorIndex: 6, initial: 25000, sliderMax: 100000, step: 1000 },
-          { key: 'other', label: 'その他', colorIndex: 7, initial: 20000, sliderMax: 100000, step: 1000 }
-        ];
-        var STORAGE_KEY = 'expense-check:v1';
-        var STORAGE_VERSION = 1;
+        var STORAGE_KEY = 'expense-check:v2';
+        var STORAGE_VERSION = 2;
+        var PALETTE = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
         var yenFmt = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 0 });
 
-        /* ===== 純粋計算ロジック ===== */
+        /* ===== ユーティリティ ===== */
         function normalizeAmount(v) {
           var n = typeof v === 'string' ? Number(v.replace(/[^0-9.-]/g, '')) : v;
           if (!isFinite(n) || n < 0) return 0;
           return Math.round(n);
         }
-        function calcTotal(expenses) {
-          return CATEGORIES.reduce(function (s, c) { return s + normalizeAmount(expenses[c.key] || 0); }, 0);
-        }
         function pct(value, total) { return total <= 0 ? 0 : (value / total) * 100; }
-        function budgetStatus(total, budget) {
-          if (budget <= 0) return 'under';
-          var r = (total / budget) * 100;
-          if (r > 100) return 'over';
-          if (r >= 90) return 'near';
-          return 'under';
-        }
-        function calcSummary(state) {
-          var total = calcTotal(state.expenses);
-          var budget = normalizeAmount(state.budget);
-          var breakdown = CATEGORIES.map(function (c) {
-            var amount = normalizeAmount(state.expenses[c.key] || 0);
-            return { key: c.key, label: c.label, colorIndex: c.colorIndex, amount: amount, ratio: pct(amount, total) };
-          });
-          return {
-            total: total, budget: budget, remaining: budget - total,
-            usageRate: pct(total, budget), status: budgetStatus(total, budget), breakdown: breakdown
-          };
-        }
-        function savingsRate(income, total) {
-          var inc = normalizeAmount(income);
-          if (inc <= 0) return null;
-          return ((inc - total) / inc) * 100;
-        }
-        function calcForecast(state) {
-          var months = Math.max(1, Math.round(state.months));
-          var total = calcTotal(state.expenses);
-          var budget = normalizeAmount(state.budget);
-          var cumulative = [];
-          for (var m = 1; m <= months; m++) cumulative.push(total * m);
-          return {
-            months: months, totalCumulative: total * months, cumulative: cumulative,
-            budgetCumulative: budget * months, budgetDiff: (total - budget) * months
-          };
-        }
-        function donutSegments(breakdown) {
-          var segs = [], acc = 0;
-          for (var i = 0; i < breakdown.length; i++) {
-            var b = breakdown[i];
-            if (b.amount <= 0 || b.ratio <= 0) continue;
-            segs.push({ colorIndex: b.colorIndex, label: b.label, amount: b.amount, ratio: b.ratio,
-              dash: b.ratio + ' ' + (100 - b.ratio), offset: 25 - acc });
-            acc += b.ratio;
-          }
-          return segs;
-        }
         function formatYen(v) { return '¥' + yenFmt.format(Math.round(v)); }
         function formatPct(v) {
           var r = Math.round(v * 10) / 10;
           return Number.isInteger(r) ? r + '%' : r.toFixed(1) + '%';
         }
+        function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+        function monthKey(d) {
+          return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+        function monthLabel(key) {
+          var p = key.split('-');
+          return Number(p[0]) + '年' + Number(p[1]) + '月';
+        }
+        function shiftMonth(key, delta) {
+          var p = key.split('-');
+          var d = new Date(Number(p[0]), Number(p[1]) - 1 + delta, 1);
+          return monthKey(d);
+        }
+
+        /* ===== 既定テンプレート ===== */
+        function defaultItems() {
+          var base = [
+            { label: '食費', amount: 60000 },
+            { label: '住居', amount: 80000 },
+            { label: '水道光熱', amount: 18000 },
+            { label: '通信', amount: 10000 },
+            { label: '交通', amount: 12000 },
+            { label: '娯楽', amount: 25000 }
+          ];
+          return base.map(function (b, i) {
+            return { id: uid(), label: b.label, amount: b.amount, color: PALETTE[i % PALETTE.length] };
+          });
+        }
 
         /* ===== 状態 ===== */
         function defaultState() {
-          var expenses = {};
-          CATEGORIES.forEach(function (c) { expenses[c.key] = c.initial; });
-          return { expenses: expenses, budget: 240000, income: 350000, months: 12 };
+          var cur = monthKey(new Date());
+          var months = {};
+          months[cur] = { items: defaultItems() };
+          return { current: cur, months: months };
         }
         function loadState() {
-          var base = defaultState();
           try {
             var raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return base;
+            if (!raw) return defaultState();
             var parsed = JSON.parse(raw);
-            if (!parsed || parsed.v !== STORAGE_VERSION || !parsed.data) return base;
+            if (!parsed || parsed.v !== STORAGE_VERSION || !parsed.data) return defaultState();
             var d = parsed.data;
-            var expenses = {};
-            CATEGORIES.forEach(function (c) {
-              expenses[c.key] = d.expenses && d.expenses[c.key] != null ? normalizeAmount(d.expenses[c.key]) : base.expenses[c.key];
-            });
-            return {
-              expenses: expenses,
-              budget: normalizeAmount(d.budget != null ? d.budget : base.budget),
-              income: normalizeAmount(d.income != null ? d.income : base.income),
-              months: typeof d.months === 'number' ? d.months : base.months
-            };
-          } catch (e) { return base; }
+            if (!d.current || !d.months) return defaultState();
+            return d;
+          } catch (e) { return defaultState(); }
         }
-        function saveState(state) {
+        function saveState() {
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: STORAGE_VERSION, data: state })); } catch (e) {}
         }
 
         var state = loadState();
         var $ = function (sel) { return document.querySelector(sel); };
-        var STATUS_LABEL = { under: '予算内', near: '予算に接近', over: '予算オーバー' };
-        var STATUS_ICON = { under: '✓', near: '△', over: '!' };
 
-        /* ===== 入力UIの生成 ===== */
-        function buildCats() {
-          var html = '';
-          CATEGORIES.forEach(function (c) {
-            var sw = 'var(--color-chart-' + c.colorIndex + ')';
-            html +=
-              '<div class="cat">' +
-                '<label class="cat__label" for="amt-' + c.key + '">' +
-                  '<span class="cat__swatch" style="background:' + sw + '" aria-hidden="true"></span>' + c.label +
-                '</label>' +
-                '<div class="cat__amount"><span class="cat__yen" aria-hidden="true">¥</span>' +
-                  '<input type="text" inputmode="numeric" id="amt-' + c.key + '" class="num cat__input" data-amount-input="' + c.key + '" autocomplete="off" /></div>' +
-                '<input type="range" class="cat__slider" data-amount-slider="' + c.key + '" min="0" max="' + c.sliderMax + '" step="' + c.step + '" aria-label="' + c.label + 'の金額スライダー" style="--accent:' + sw + '" />' +
-              '</div>';
-          });
-          $('[data-cats]').innerHTML = html;
+        /* 現在月のデータを取得（無ければ新規作成） */
+        function currentMonth() {
+          if (!state.months[state.current]) state.months[state.current] = { items: defaultItems() };
+          return state.months[state.current];
+        }
+        function nextColor(items) {
+          // 既存と被りにくいよう、使用数の少ない色を選ぶ
+          var counts = {};
+          PALETTE.forEach(function (c) { counts[c] = 0; });
+          items.forEach(function (it) { if (counts[it.color] != null) counts[it.color]++; });
+          var best = PALETTE[0], min = Infinity;
+          PALETTE.forEach(function (c) { if (counts[c] < min) { min = counts[c]; best = c; } });
+          return best;
         }
 
         /* ===== 描画（rAF合体） ===== */
@@ -505,123 +367,145 @@
         function scheduleRender() {
           if (pending) return;
           pending = true;
-          requestAnimationFrame(function () { pending = false; render(); saveState(state); });
+          requestAnimationFrame(function () { pending = false; render(); saveState(); });
         }
         function setText(sel, t) { var el = $(sel); if (el) el.textContent = t; }
 
+        /* 項目リストは構造が変わる時だけ作り直す（編集中のフォーカス維持のため） */
+        function buildItems() {
+          var month = currentMonth();
+          var html = '';
+          month.items.forEach(function (it) {
+            html +=
+              '<div class="item" data-item="' + it.id + '">' +
+                '<span class="item__dot" style="background:var(--' + it.color + ')"></span>' +
+                '<input class="item__label" type="text" value="' + escapeAttr(it.label) + '" data-field="label" aria-label="項目名" />' +
+                '<span class="item__amount"><span class="item__yen" aria-hidden="true">¥</span>' +
+                  '<input class="item__input" type="text" inputmode="numeric" value="' + it.amount.toLocaleString('ja-JP') + '" data-field="amount" aria-label="金額" autocomplete="off" /></span>' +
+                '<button class="item__del" data-del="' + it.id + '" aria-label="この項目を削除" title="削除">×</button>' +
+              '</div>';
+          });
+          $('[data-items]').innerHTML = html;
+          bindItems();
+        }
+        function escapeAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
         function render() {
-          var summary = calcSummary(state);
-          var forecast = calcForecast(state);
+          var month = currentMonth();
+          var items = month.items;
+          var total = items.reduce(function (s, it) { return s + normalizeAmount(it.amount); }, 0);
 
-          setText('[data-summary-value="total"]', formatYen(summary.total));
-          var remCard = $('[data-summary-card="remaining"]');
-          if (remCard) remCard.setAttribute('data-tone', summary.remaining < 0 ? 'bad' : 'good');
-          setText('[data-summary-value="remaining"]', formatYen(summary.remaining));
+          // 月表示
+          var monthInput = $('[data-month]');
+          if (monthInput && monthInput.value !== state.current) monthInput.value = state.current;
+          setText('[data-count]', items.length + '項目');
 
-          var rate = savingsRate(state.income, summary.total);
-          setText('[data-summary-value="savings"]', rate === null ? '—' : formatPct(rate));
-          var savCard = $('[data-summary-card="savings"]');
-          if (savCard) savCard.setAttribute('data-tone', rate !== null && rate >= 0 ? 'good' : 'bad');
+          // 合計
+          setText('[data-total]', formatYen(total));
+          setText('[data-total-sub]', monthLabel(state.current) + ' の支出');
+          setText('[data-donut-total]', formatYen(total));
 
-          var gauge = $('[data-gauge]');
-          if (gauge) gauge.setAttribute('data-status', summary.status);
-          var fill = $('[data-gauge-fill]');
-          if (fill) fill.style.width = Math.min(summary.usageRate, 100) + '%';
-          setText('[data-gauge-rate]', formatPct(summary.usageRate));
-          setText('[data-gauge-label]', STATUS_LABEL[summary.status]);
-          setText('[data-gauge-icon]', STATUS_ICON[summary.status]);
-          var gImg = $('.gauge[role="img"]');
-          if (gImg) gImg.setAttribute('aria-label', '予算使用率 ' + formatPct(summary.usageRate));
-
-          var segs = donutSegments(summary.breakdown);
+          // ドーナツ
+          var segs = [], acc = 0;
+          items.forEach(function (it) {
+            var amt = normalizeAmount(it.amount);
+            if (amt <= 0) return;
+            var ratio = pct(amt, total);
+            segs.push({ color: it.color, dash: ratio + ' ' + (100 - ratio), offset: 25 - acc });
+            acc += ratio;
+          });
           var donut = $('[data-donut]');
           if (donut) {
             donut.innerHTML = segs.map(function (s) {
-              return '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-chart-' + s.colorIndex + ')" stroke-width="6" pathLength="100" stroke-dasharray="' + s.dash + '" stroke-dashoffset="' + s.offset + '"></circle>';
+              return '<circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--' + s.color + ')" stroke-width="6" pathLength="100" stroke-dasharray="' + s.dash + '" stroke-dashoffset="' + s.offset + '"></circle>';
             }).join('');
           }
-          setText('[data-donut-total]', formatYen(summary.total));
 
+          // 凡例
           var legend = $('[data-legend]');
           if (legend) {
-            legend.innerHTML = summary.breakdown.filter(function (b) { return b.amount > 0; }).map(function (b) {
-              return '<li class="legend__item"><span class="legend__swatch" style="background:var(--color-chart-' + b.colorIndex + ')"></span><span class="legend__name">' + b.label + '</span><span class="num legend__amount">' + formatYen(b.amount) + '</span><span class="num legend__pct caption">' + formatPct(b.ratio) + '</span></li>';
+            legend.innerHTML = items.filter(function (it) { return normalizeAmount(it.amount) > 0; }).map(function (it) {
+              var amt = normalizeAmount(it.amount);
+              return '<li class="legend__item"><span class="legend__swatch" style="background:var(--' + it.color + ')"></span><span class="legend__name">' + escapeHtml(it.label || '(無題)') + '</span><span class="num legend__amount">' + formatYen(amt) + '</span><span class="num legend__pct caption">' + formatPct(pct(amt, total)) + '</span></li>';
             }).join('');
           }
-          var empty = $('[data-donut-empty]');
-          if (empty) empty.hidden = summary.total > 0;
+          var empty = $('[data-empty]');
+          if (empty) empty.hidden = total > 0;
 
+          // SRテーブル
           var srBody = $('[data-sr-table] tbody');
           if (srBody) {
-            srBody.innerHTML = summary.breakdown.map(function (b) {
-              return '<tr><td>' + b.label + '</td><td>' + formatYen(b.amount) + '</td><td>' + formatPct(b.ratio) + '</td></tr>';
+            srBody.innerHTML = items.map(function (it) {
+              var amt = normalizeAmount(it.amount);
+              return '<tr><td>' + escapeHtml(it.label) + '</td><td>' + formatYen(amt) + '</td><td>' + formatPct(pct(amt, total)) + '</td></tr>';
             }).join('');
           }
-
-          setText('[data-months-label]', forecast.months + 'ヶ月');
-          setText('[data-forecast-caption]', forecast.months + 'ヶ月後の累計支出');
-          setText('[data-forecast-total]', formatYen(forecast.totalCumulative));
-          var diffEl = $('[data-forecast-diff]');
-          if (diffEl) {
-            diffEl.textContent = '予算比 ' + (forecast.budgetDiff > 0 ? '+' : '') + formatYen(forecast.budgetDiff);
-            diffEl.setAttribute('data-over', forecast.budgetDiff > 0 ? 'true' : 'false');
-          }
-
-          var trend = $('[data-trend]');
-          if (trend) {
-            var max = Math.max.apply(null, forecast.cumulative.concat([1]));
-            trend.innerHTML = forecast.cumulative.map(function (v, i) {
-              var over = forecast.budgetCumulative > 0 && v > forecast.budgetCumulative * ((i + 1) / forecast.months);
-              var showLabel = forecast.months > 12 ? (i + 1) % 2 === 0 : true;
-              return '<div class="trend__col"><div class="trend__bar" style="height:' + (v / max) * 100 + '%" data-over="' + over + '"></div><span class="trend__label caption">' + (showLabel ? i + 1 : '') + '</span></div>';
-            }).join('');
-          }
-
-          syncInputs();
         }
+        function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-        function syncInputs() {
-          CATEGORIES.forEach(function (c) {
-            var amount = normalizeAmount(state.expenses[c.key] || 0);
-            var input = $('[data-amount-input="' + c.key + '"]');
-            var slider = $('[data-amount-slider="' + c.key + '"]');
-            if (input && document.activeElement !== input) input.value = amount.toLocaleString('ja-JP');
-            if (slider) {
-              if (amount > Number(slider.max)) slider.max = String(Math.ceil(amount / c.step) * c.step);
-              slider.value = String(amount);
-            }
+        /* ===== 項目行のイベント ===== */
+        function bindItems() {
+          var rows = document.querySelectorAll('[data-item]');
+          Array.prototype.forEach.call(rows, function (row) {
+            var id = row.getAttribute('data-item');
+            var labelInput = row.querySelector('[data-field="label"]');
+            var amountInput = row.querySelector('[data-field="amount"]');
+            if (labelInput) labelInput.addEventListener('input', function (e) {
+              var it = findItem(id); if (it) it.label = e.target.value; scheduleRender();
+            });
+            if (amountInput) amountInput.addEventListener('input', function (e) {
+              var it = findItem(id); if (it) it.amount = normalizeAmount(e.target.value); scheduleRender();
+            });
+            // 金額入力欄からフォーカスが外れたら千区切りに整形
+            if (amountInput) amountInput.addEventListener('blur', function (e) {
+              e.target.value = normalizeAmount(e.target.value).toLocaleString('ja-JP');
+            });
           });
-          var bi = $('[data-budget-input]'), bs = $('[data-budget-slider]');
-          if (bi && document.activeElement !== bi) bi.value = normalizeAmount(state.budget).toLocaleString('ja-JP');
-          if (bs) { if (state.budget > Number(bs.max)) bs.max = String(state.budget); bs.value = String(normalizeAmount(state.budget)); }
-          var ii = $('[data-income-input]');
-          if (ii && document.activeElement !== ii) ii.value = normalizeAmount(state.income).toLocaleString('ja-JP');
-          var ms = $('[data-months-slider]');
-          if (ms) ms.value = String(state.months);
+          var dels = document.querySelectorAll('[data-del]');
+          Array.prototype.forEach.call(dels, function (btn) {
+            btn.addEventListener('click', function () {
+              var id = btn.getAttribute('data-del');
+              var month = currentMonth();
+              month.items = month.items.filter(function (it) { return it.id !== id; });
+              buildItems(); scheduleRender();
+            });
+          });
+        }
+        function findItem(id) {
+          var month = currentMonth();
+          for (var i = 0; i < month.items.length; i++) if (month.items[i].id === id) return month.items[i];
+          return null;
         }
 
-        /* ===== イベント結線 ===== */
-        function bind() {
-          CATEGORIES.forEach(function (c) {
-            var input = $('[data-amount-input="' + c.key + '"]');
-            var slider = $('[data-amount-slider="' + c.key + '"]');
-            if (input) input.addEventListener('input', function (e) { state.expenses[c.key] = normalizeAmount(e.target.value); scheduleRender(); });
-            if (slider) slider.addEventListener('input', function (e) { state.expenses[c.key] = normalizeAmount(e.target.value); scheduleRender(); });
-          });
-          var bi = $('[data-budget-input]'), bs = $('[data-budget-slider]');
-          if (bi) bi.addEventListener('input', function (e) { state.budget = normalizeAmount(e.target.value); scheduleRender(); });
-          if (bs) bs.addEventListener('input', function (e) { state.budget = normalizeAmount(e.target.value); scheduleRender(); });
-          var ii = $('[data-income-input]');
-          if (ii) ii.addEventListener('input', function (e) { state.income = normalizeAmount(e.target.value); scheduleRender(); });
-          var ms = $('[data-months-slider]');
-          if (ms) ms.addEventListener('input', function (e) { state.months = Number(e.target.value) || 1; scheduleRender(); });
+        /* ===== 全体イベント ===== */
+        function changeMonth(key) {
+          state.current = key;
+          currentMonth();
+          buildItems(); render(); saveState();
         }
+
+        $('[data-add]').addEventListener('click', function () {
+          var month = currentMonth();
+          month.items.push({ id: uid(), label: '', amount: 0, color: nextColor(month.items) });
+          buildItems();
+          // 追加した行のラベルにフォーカス
+          var rows = document.querySelectorAll('[data-item]');
+          var last = rows[rows.length - 1];
+          if (last) last.querySelector('[data-field="label"]').focus();
+          scheduleRender();
+        });
+        $('[data-prev]').addEventListener('click', function () { changeMonth(shiftMonth(state.current, -1)); });
+        $('[data-next]').addEventListener('click', function () { changeMonth(shiftMonth(state.current, 1)); });
+        $('[data-month]').addEventListener('change', function (e) {
+          if (e.target.value) changeMonth(e.target.value);
+        });
 
         var yearEl = $('[data-year]');
         if (yearEl) yearEl.textContent = String(new Date().getFullYear());
-        buildCats();
-        bind();
+
+        buildItems();
         render();
+        saveState();
       })();
     </script>
   </body>
